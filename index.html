@@ -121,6 +121,10 @@
   .pd-heat-cell.empty{background:#131924;color:#3d4658;cursor:default;font-weight:600;}
   .pd-heat-cell.empty.pd-heat-nodesemp{background:#2a1f3d;color:#c79bff;cursor:pointer;}
   .pd-heat-cell.empty.pd-heat-nodesemp:hover{transform:scale(1.12);font-weight:800;box-shadow:0 0 0 1.5px rgba(199,155,255,.9), 0 0 10px 3px rgba(199,155,255,.5) !important;}
+  .pd-heat-cell.empty.pd-heat-clickable{cursor:pointer;}
+  .pd-heat-cell.empty.pd-heat-clickable:hover{transform:scale(1.12);box-shadow:0 0 0 1.5px rgba(255,255,255,.5), 0 0 8px 2px rgba(255,255,255,.3) !important;}
+  .pd-heat-cell.empty.pd-heat-status{background:#0d3438;color:#5eead4;cursor:pointer;font-weight:800;}
+  .pd-heat-cell.empty.pd-heat-status:hover{transform:scale(1.12);box-shadow:0 0 0 1.5px rgba(94,234,212,.9), 0 0 10px 3px rgba(94,234,212,.5) !important;}
   .pd-heat-cell.empty:hover{transform:none;box-shadow:none;font-weight:600;}
   .pd-heatmap-table th.pd-heat-daylabel{font-size:12.5px;color:var(--text);font-weight:700;}
   .pd-heatmap-table th.pd-heat-bucketlabel{font-size:11px;color:var(--text-dim);font-weight:800;padding:3px 0;letter-spacing:.3px;}
@@ -379,6 +383,7 @@
               <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#eab308"></span>75–89%</div>
               <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#22c55e"></span>≥90%</div>
               <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#2a1f3d;border:1px solid #c79bff;"></span>apontou, sem desemp.</div>
+              <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#0d3438;border:1px solid #5eead4;"></span>status registrado</div>
               <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#161b26"></span>dom</div>
             </div>
           </div>
@@ -582,6 +587,18 @@ var DATE_BASE = Date.UTC(2026,0,1);
 var LATEST_DOY = 0;
 var TODAY_DOY = 0;
 var FLEET = [103,139,149,154,160,170,171,200,201,210,211,212,213,229,230,243,250,251,271,272,283,284,285,295,297,298,299];
+// Status registrado manualmente pra células sem apontamento (manutenção/parada/sem operador/outro).
+// Chave: dia+"_"+injetora+"_"+bucket(D|N) -> {status, obs}. Vem da aba "Status Máquinas" da planilha.
+var STATUS_MAP = {};
+var STATUS_CATEGORIES = ['Manutenção', 'Parada não planejada', 'Sem operador', 'Outro'];
+var STATUS_ABBREV = {'Manutenção':'M', 'Parada não planejada':'P', 'Sem operador':'O', 'Outro':'?'};
+function statusKey(day, machine, bucket){ return day+'_'+machine+'_'+bucket; }
+function statusAbbrev(s){ return STATUS_ABBREV[s] || (s ? s.charAt(0).toUpperCase() : '?'); }
+function buildStatusMap(rawArr){
+  var map = {};
+  (rawArr||[]).forEach(function(r){ map[statusKey(r[0], r[1], r[2])] = { status:r[3], obs:r[4]||'' }; });
+  return map;
+}
 function firstDayOfMonthDoy(doy){
   var d = new Date(DATE_BASE + doy*86400000);
   var first = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
@@ -1030,6 +1047,89 @@ function rankBy(rows, idx, label){
 
 function closeModal(){ document.getElementById('pd-modal-overlay').classList.remove('show'); }
 
+/**
+ * Salva o status de uma célula (dia+injetora+turno D/N) na planilha, aba "Status Máquinas".
+ * Dentro do Apps Script usa google.script.run (RPC direto, com confirmação de verdade). Fora do
+ * Google (Vercel/GitHub Pages) usa o mesmo truque de JSONP que já resolve a leitura -- o Apps
+ * Script não liga pra GET vs POST de verdade, então dá pra gravar assim também, com confirmação.
+ */
+function saveMachineStatusRemote(day, machine, bucket, status, obs){
+  if(typeof google !== 'undefined' && google.script && google.script.run){
+    return new Promise(function(resolve, reject){
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(function(err){ reject(new Error(err && err.message ? err.message : String(err))); })
+        .saveMachineStatus(day, machine, bucket, status, obs);
+    });
+  }
+  return new Promise(function(resolve, reject){
+    var callbackName = '__pdJsonpSaveCallback_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+    var script = document.createElement('script');
+    var timeoutId;
+    function cleanup(){ delete window[callbackName]; if(script.parentNode) script.parentNode.removeChild(script); clearTimeout(timeoutId); }
+    window[callbackName] = function(data){
+      cleanup();
+      if(data && data.error){ reject(new Error(data.error)); return; }
+      resolve(data);
+    };
+    timeoutId = setTimeout(function(){ cleanup(); reject(new Error('Tempo esgotado (20s) salvando -- confira sua conexão e tenta de novo.')); }, 20000);
+    script.onerror = function(){ cleanup(); reject(new Error('Não consegui contatar o App da Web pra salvar -- confira se a URL e a implantação estão certas.')); };
+    var sep = WEBAPP_URL.indexOf('?')===-1 ? '?' : '&';
+    script.src = WEBAPP_URL + sep + 'action=setStatus&day='+encodeURIComponent(day)+'&injetora='+encodeURIComponent(machine)+
+      '&bucket='+encodeURIComponent(bucket)+'&status='+encodeURIComponent(status)+'&obs='+encodeURIComponent(obs)+'&callback='+callbackName;
+    document.head.appendChild(script);
+  });
+}
+
+/** Modal pra registrar (ou editar) por que uma injetora não teve apontamento naquele dia/turno. */
+function openStatusModal(day, machine, bucket){
+  var existing = STATUS_MAP[statusKey(day, machine, bucket)];
+  var bucketLabel = bucket==='N' ? 'Noturno (N)' : 'Diurno (D)';
+  var catButtons = STATUS_CATEGORIES.map(function(c){
+    var active = existing && existing.status===c ? ' active' : '';
+    return '<button type="button" class="pd-status-cat-btn'+active+'" data-cat="'+c.replace(/"/g,'&quot;')+'">'+c+'</button>';
+  }).join('');
+
+  document.getElementById('pd-modal-content').innerHTML =
+    '<div class="pd-modal-head"><div><div class="pd-modal-title">INJ '+machine+' · '+doyToStr(day)+' · '+bucketLabel+'</div>'+
+    '<div class="pd-modal-sub">Sem apontamento nesse turno — registre o motivo (fica salvo na planilha, aba "Status Máquinas")</div></div>'+
+    '<button class="pd-modal-close" id="pd-modal-close-btn">✕</button></div>'+
+    '<div class="pd-seg" id="pd-status-cats" style="margin-bottom:14px;">'+catButtons+'</div>'+
+    '<textarea id="pd-status-obs" placeholder="Observação (opcional)" style="width:100%;min-height:70px;background:var(--card-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui);font-size:13px;padding:10px;resize:vertical;box-sizing:border-box;">'+(existing?existing.obs.replace(/</g,'&lt;'):'')+'</textarea>'+
+    '<div style="display:flex;gap:10px;margin-top:14px;align-items:center;">'+
+      '<button class="pd-btn" id="pd-status-save-btn">Salvar</button>'+
+      '<span id="pd-status-msg" style="font-size:12px;color:var(--text-faint);"></span>'+
+    '</div>';
+
+  document.getElementById('pd-modal-overlay').classList.add('show');
+  document.getElementById('pd-modal-close-btn').onclick = closeModal;
+
+  var selectedCat = existing ? existing.status : null;
+  document.getElementById('pd-status-cats').addEventListener('click', function(e){
+    var btn = e.target.closest('.pd-status-cat-btn'); if(!btn) return;
+    selectedCat = btn.dataset.cat;
+    document.querySelectorAll('#pd-status-cats .pd-status-cat-btn').forEach(function(b){ b.classList.toggle('active', b===btn); });
+  });
+
+  document.getElementById('pd-status-save-btn').onclick = function(){
+    var msgEl = document.getElementById('pd-status-msg');
+    if(!selectedCat){ msgEl.textContent = 'Escolhe um status primeiro.'; msgEl.style.color = 'var(--red)'; return; }
+    var obs = document.getElementById('pd-status-obs').value;
+    var btn = document.getElementById('pd-status-save-btn');
+    btn.disabled = true;
+    msgEl.textContent = 'Salvando...'; msgEl.style.color = 'var(--text-faint)';
+    saveMachineStatusRemote(day, machine, bucket, selectedCat, obs).then(function(){
+      STATUS_MAP[statusKey(day, machine, bucket)] = { status: selectedCat, obs: obs };
+      msgEl.textContent = 'Salvo!'; msgEl.style.color = 'var(--green)';
+      btn.disabled = false;
+      renderAll();
+    }).catch(function(err){
+      msgEl.textContent = 'Erro: ' + err.message; msgEl.style.color = 'var(--red)';
+      btn.disabled = false;
+    });
+  };
+}
+
 function openMachineModal(m){
   var rows = ROWS.filter(function(r){ return r[1]===m && r[0]>=STATE.startDoy && r[0]<=STATE.endDoy; }).filter(matchesGlobalFilters);
   var okRows = rows.filter(isValidDesemp);
@@ -1222,7 +1322,12 @@ function renderOverview(){
           // corretamente NÃO conta como parada, já que teve atividade registrada.
           tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="'+rowsMDrawD.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
         } else {
-          tbody += '<td class="pd-heat-cell empty" data-day="'+d+'" style="'+border+'">·</td>';
+          var stD = STATUS_MAP[statusKey(d, m, 'D')];
+          if(stD){
+            tbody += '<td class="pd-heat-cell empty pd-heat-status" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="'+stD.status.replace(/"/g,'&quot;')+(stD.obs?(': '+stD.obs.replace(/"/g,'&quot;')):'')+' — clique pra editar">'+statusAbbrev(stD.status)+'</td>';
+          } else {
+            tbody += '<td class="pd-heat-cell empty pd-heat-clickable" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="Sem apontamento — clique pra registrar o motivo (manutenção, parada, sem operador...)">·</td>';
+          }
         }
         if(sessionsN.length){
           var vN = sessionsN.reduce(function(a,s){return a+clampDesemp(s.desemp);},0)/sessionsN.length;
@@ -1231,7 +1336,12 @@ function renderOverview(){
         } else if(rowsMDrawN.length){
           tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="'+rowsMDrawN.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
         } else {
-          tbody += '<td class="pd-heat-cell empty" data-day="'+d+'" style="'+border+'">·</td>';
+          var stN = STATUS_MAP[statusKey(d, m, 'N')];
+          if(stN){
+            tbody += '<td class="pd-heat-cell empty pd-heat-status" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="'+stN.status.replace(/"/g,'&quot;')+(stN.obs?(': '+stN.obs.replace(/"/g,'&quot;')):'')+' — clique pra editar">'+statusAbbrev(stN.status)+'</td>';
+          } else {
+            tbody += '<td class="pd-heat-cell empty pd-heat-clickable" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="Sem apontamento — clique pra registrar o motivo (manutenção, parada, sem operador...)">·</td>';
+          }
         }
       }
       tbody+='</tr>';
@@ -1759,6 +1869,11 @@ document.getElementById('pd-heatmap-table').addEventListener('click', function(e
     }
     return;
   }
+  var statusCell = e.target.closest('td.pd-heat-cell.pd-heat-clickable[data-m], td.pd-heat-cell.pd-heat-status[data-m]');
+  if(statusCell){
+    openStatusModal(Number(statusCell.dataset.d), Number(statusCell.dataset.m), statusCell.dataset.bucket);
+    return;
+  }
   var sub = e.target.closest('td.pd-heat-cell[data-m]');
   if(sub){
     openDayDetailModal(Number(sub.dataset.d), Number(sub.dataset.m), false, sub.dataset.bucket);
@@ -1934,6 +2049,31 @@ function fetchRowsFromWebApp(){
   });
 }
 
+/**
+ * Busca o status das máquinas (manutenção/parada/sem operador/outro) via JSONP. Diferente de
+ * fetchRowsFromWebApp, NUNCA rejeita -- status é um extra (pra colorir células vazias), não algo
+ * essencial pra ver o dashboard, então se der erro ou demorar demais, resolve com [] em vez de
+ * travar o carregamento do resto.
+ */
+function fetchStatusMapFromWebApp(){
+  return new Promise(function(resolve){
+    var callbackName = '__pdJsonpStatusCallback_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+    var script = document.createElement('script');
+    var timeoutId;
+    function cleanup(){
+      delete window[callbackName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+      clearTimeout(timeoutId);
+    }
+    window[callbackName] = function(data){ cleanup(); resolve(Array.isArray(data) ? data : []); };
+    timeoutId = setTimeout(function(){ cleanup(); resolve([]); }, 20000);
+    script.onerror = function(){ cleanup(); resolve([]); };
+    var sep = WEBAPP_URL.indexOf('?')===-1 ? '?' : '&';
+    script.src = WEBAPP_URL + sep + 'format=status&callback=' + callbackName;
+    document.head.appendChild(script);
+  });
+}
+
 document.getElementById('pd-refresh-btn').addEventListener('click', function(){
   var btn = this;
   btn.disabled = true;
@@ -1998,7 +2138,16 @@ function showLoadError(err){
 if(!WEBAPP_URL || WEBAPP_URL.indexOf('COLE_AQUI') !== -1){
   showLoadError(new Error('A URL do App da Web ainda não foi preenchida (variável WEBAPP_URL no topo do arquivo Dashboard-static.html).'));
 } else {
-  fetchRowsFromWebApp().then(bootDashboardWithData).catch(showLoadError);
+  fetchRowsFromWebApp().then(function(rows){
+    bootDashboardWithData(rows);
+    // Status é um extra (colore células vazias) -- carrega em paralelo, DEPOIS de já ter mostrado
+    // o dashboard com os dados principais. Se demorar ou falhar, o dashboard já está usável do
+    // mesmo jeito; só re-renderiza quando (e se) o status chegar.
+    fetchStatusMapFromWebApp().then(function(statusArr){
+      STATUS_MAP = buildStatusMap(statusArr);
+      renderAll();
+    });
+  }).catch(showLoadError);
 }
 
 // Sincroniza a barra de rolagem de cima (finta, só pra dar acesso rápido ao scroll horizontal
