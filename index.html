@@ -119,6 +119,8 @@
   .pd-heat-cell:hover{transform:scale(1.12);position:relative;z-index:3;font-weight:800;
     box-shadow:0 0 0 1.5px rgba(255,255,255,.95), 0 0 10px 3px rgba(255,255,255,.55) !important;}
   .pd-heat-cell.empty{background:#131924;color:#3d4658;cursor:default;font-weight:600;}
+  .pd-heat-cell.empty.pd-heat-nodesemp{background:#2a1f3d;color:#c79bff;cursor:pointer;}
+  .pd-heat-cell.empty.pd-heat-nodesemp:hover{transform:scale(1.12);font-weight:800;box-shadow:0 0 0 1.5px rgba(199,155,255,.9), 0 0 10px 3px rgba(199,155,255,.5) !important;}
   .pd-heat-cell.empty:hover{transform:none;box-shadow:none;font-weight:600;}
   .pd-heatmap-table th.pd-heat-daylabel{font-size:12.5px;color:var(--text);font-weight:700;}
   .pd-heatmap-table th.pd-heat-bucketlabel{font-size:11px;color:var(--text-dim);font-weight:800;padding:3px 0;letter-spacing:.3px;}
@@ -236,13 +238,6 @@
 </style>
 </head>
 <body>
-<div id="pd-loading-overlay" style="position:fixed;inset:0;background:#0a0e14;z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'IBM Plex Sans',sans-serif;color:#e9edf4;">
-  <div style="text-align:center;">
-    <div style="width:34px;height:34px;border:3px solid #1e2531;border-top-color:#4dabf7;border-radius:50%;margin:0 auto 16px;animation:pd-spin 0.8s linear infinite;"></div>
-    <div>Carregando dados da planilha…</div>
-  </div>
-</div>
-<style>@keyframes pd-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}</style>
 <div class="pd-dash">
 
   <div class="pd-header">
@@ -376,6 +371,7 @@
               <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#f97316"></span>60–74%</div>
               <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#eab308"></span>75–89%</div>
               <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#22c55e"></span>≥90%</div>
+              <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#2a1f3d;border:1px solid #c79bff;"></span>apontou, sem desemp.</div>
               <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#161b26"></span>dom</div>
             </div>
           </div>
@@ -384,7 +380,7 @@
           <div class="pd-heatmap-scroll" id="pd-heatmap-scroll">
             <table class="pd-heatmap-table" id="pd-heatmap-table"></table>
           </div>
-          <div class="pd-heatmap-caption" style="margin-top:10px;margin-bottom:0;">Sempre as 27 injetoras da frota aparecem como linha, mesmo as sem nenhum apontamento no período (ficam com "·" o tempo todo) — assim nenhuma máquina fica "escondida" contando como parada sem dar pra conferir visualmente. Cada dia tem duas colunas: "D" (diurno, fusão de Dia/Comercial/Manhã/Tarde/Outro) e "N" (Noturno). Quatro linhas fixas no fim da grade, cada uma também separada por D/N: "Média de desempenho" = média simples SÓ das máquinas que rodaram naquele dia/turno (soma ÷ quantas rodaram) · "Eficiência" = soma do desempenho de cada máquina que rodou, dividido pelas 27 da frota inteira (não só as que rodaram) — máquina parada entra como 0 na conta, então mostra quanto da capacidade TOTAL foi de fato aproveitada, não só o desempenho de quem trabalhou · "Refugo" = refugos ÷ (refugos + boas), ponderado por peças · "Máquinas paradas" = quantas das 27 injetoras não tiveram apontamento naquele dia, NAQUELE turno especificamente (uma máquina que só rodou de noite conta como parada na coluna D). Clique no nome da injetora pra abrir o histórico completo, com operadores e ferramentas.</div>
+          <div class="pd-heatmap-caption" style="margin-top:10px;margin-bottom:0;">Sempre as 27 injetoras da frota aparecem como linha, mesmo as sem nenhum apontamento no período (ficam com "·" o tempo todo) — assim nenhuma máquina fica "escondida" contando como parada sem dar pra conferir visualmente. Cada dia tem duas colunas: "D" (diurno, fusão de Dia/Comercial/Manhã/Tarde/Outro) e "N" (Noturno). Quatro linhas fixas no fim da grade, cada uma também separada por D/N: "Média de desempenho" = média simples SÓ das máquinas que rodaram naquele dia/turno (soma ÷ quantas rodaram) · "Eficiência" = soma do desempenho de cada máquina que rodou, dividido pelas 27 da frota inteira (não só as que rodaram) — máquina parada entra como 0 na conta, então mostra quanto da capacidade TOTAL foi de fato aproveitada, não só o desempenho de quem trabalhou · "Refugo" = refugos ÷ (refugos + boas), ponderado por peças · "Máquinas paradas" = quantas das 27 injetoras não tiveram NENHUM apontamento naquele dia, NAQUELE turno especificamente (uma máquina que só rodou de noite conta como parada na coluna D) — uma célula roxa com "!" é diferente de "·": significa que teve apontamento, só que sem desempenho válido pra calcular (normalmente peças previstas = 0 naquela linha), então NÃO conta como parada; clique nela pra ver o apontamento e conferir o motivo. Clique no nome da injetora pra abrir o histórico completo, com operadores e ferramentas.</div>
         </div>
       </div>
 
@@ -406,7 +402,7 @@
         </div>
         <div class="pd-card">
           <div class="pd-card-title" style="margin-bottom:2px;">Top 10 operadores por turno</div>
-          <div class="pd-page-sub" style="margin-bottom:10px;">Precisa de pelo menos 3 sessões de produção (turno+ferramenta, já consolidando reapontamento e troca de operador no meio do turno) pra entrar no ranking. Abaixo de cada operador, as até 3 ferramentas com melhor desempenho médio dele — o número entre parênteses é quantas sessões sustentam aquela média, pra você julgar se é amostra pequena.</div>
+          <div class="pd-page-sub" style="margin-bottom:10px;">Precisa de pelo menos 3 apontamentos pra entrar no ranking. Abaixo de cada operador, as até 3 ferramentas com melhor desempenho médio dele — o número entre parênteses é quantos apontamentos sustentam aquela média, pra você julgar se é amostra pequena.</div>
           <div id="pd-maq-best-ops" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;"></div>
         </div>
       </div>
@@ -446,7 +442,7 @@
         </div>
         <div class="pd-card">
           <div class="pd-card-title" style="margin-bottom:2px;">Melhores operadores por turno</div>
-          <div class="pd-page-sub" style="margin-bottom:10px;">Top 10 por turno. Só entram operadores com pelo menos 3 sessões de produção (turno+ferramenta, já consolidando reapontamento e troca de operador no meio do turno) no período, pra não deixar 1 ordem de sorte virar "melhor operador". As até 3 ferramentas sugeridas abaixo de cada nome usam o histórico completo do operador (todo o período de dados, não só o que está filtrado no topo) — é uma recomendação, não uma leitura do recorte atual.</div>
+          <div class="pd-page-sub" style="margin-bottom:10px;">Top 10 por turno. Só entram operadores com pelo menos 3 apontamentos no período, pra não deixar 1 ordem de sorte virar "melhor operador". As até 3 ferramentas sugeridas abaixo de cada nome usam o histórico completo do operador (todo o período de dados, não só o que está filtrado no topo) — é uma recomendação, não uma leitura do recorte atual.</div>
           <div id="pd-prod-best-ops" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;"></div>
         </div>
       </div>
@@ -559,34 +555,26 @@
 
 <script>
 // row = [doy, injetora, turno('D'/'T'/'N'), desemp(%|null), boas, previstas, refugos, refugoPct(%|null), ok(bool), material, motivo, operador, ferramenta, cavidades(int|null), injetadas(num|null)]
-//
-// VERSÃO ESTÁTICA (Vercel/GitHub Pages) -- diferente do Dashboard.html normal, que recebe os dados
-// prontos via tag de template do Apps Script (<?!= JSON.stringify(rows) ?>), esta versão busca os
-// dados via JSONP (tag <script>, não fetch()) no endpoint JSON do App da Web (Code.gs -> doGet com
-// ?format=json&callback=NOME) -- fetch() direto esbarraria em CORS, já que a resposta do Apps Script
-// nunca carrega Access-Control-Allow-Origin liberando outra origem. ROWS começa vazio e só é
-// preenchido de verdade depois que a resposta chega -- por isso toda a inicialização que dependia de
-// ROWS estar pronto na hora foi movida pra dentro de bootDashboardWithData(), chamada só depois que a
-// Promise de fetchRowsFromWebApp() resolve.
-//
-// PREENCHA AQUI a URL do seu App da Web (Extensões > Apps Script > Implantar > Nova implantação >
-// tipo "App da Web" > Executar como "Eu" > Quem pode acessar "Qualquer pessoa" > Implantar). Copie a
-// URL que o Google gerar e cole entre as aspas abaixo, terminando em /exec:
-var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbw6MZ5gsKhJQCY_okJExQLnIGjo4RZWWt8Xp9eL_bkW_qrfN3il7nGDJqGnObrKwq_hnA/exec';
-
-var ROWS = [];
+var ROWS = <?!= JSON.stringify(rows) ?>;
 var DATE_BASE = Date.UTC(2026,0,1);
-var LATEST_DOY = 0;
-var TODAY_DOY = 0;
+if (!ROWS || ROWS.length === 0) {
+  document.write('<div style="font-family:Arial,sans-serif;padding:40px;color:#e9edf4;background:#0a0e14;min-height:100vh;">' +
+    '<h2>Nenhum apontamento carregado</h2>' +
+    '<p>O dashboard recebeu uma lista vazia da planilha. Isso normalmente não deveria acontecer sem uma mensagem de erro — ' +
+    'volte pra planilha, abra o Apps Script, rode <code>debugColunas()</code> e confira o log em Ver → Registros.</p></div>');
+  throw new Error('ROWS vazio');
+}
+var LATEST_DOY = ROWS.reduce(function(m,r){ return r[0]>m?r[0]:m; }, 0);
+var TODAY_DOY = LATEST_DOY; // trata a data mais recente presente nos dados como "hoje"
 var FLEET = [103,139,149,154,160,170,171,200,201,210,211,212,213,229,230,243,250,251,271,272,283,284,285,295,297,298,299];
 function firstDayOfMonthDoy(doy){
   var d = new Date(DATE_BASE + doy*86400000);
   var first = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
   return Math.round((first-DATE_BASE)/86400000);
 }
-var DEFAULT_START_DOY = 0;
+var DEFAULT_START_DOY = firstDayOfMonthDoy(LATEST_DOY);
 
-var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, activeView:'geral', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', minDesemp:0, maxDesemp:120, turnoFilter:'', operadorFilter:'', maquinaFilter:'', ferramentaFilter:'', chartRange:'all', selectedMachine:null,
+var STATE = { startDoy:DEFAULT_START_DOY, endDoy:LATEST_DOY, metaDesemp:80, metaRefugo:2, activeView:'geral', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', minDesemp:0, maxDesemp:120, turnoFilter:'', operadorFilter:'', maquinaFilter:'', ferramentaFilter:'', chartRange:'all', selectedMachine:null,
   turnoRanges:[ {name:'Comercial', start:'07:30', end:'17:28'}, {name:'Manhã', start:'06:15', end:'12:30'}, {name:'Tarde', start:'12:20', end:'21:15'}, {name:'Noite', start:'21:00', end:'06:30'} ] };
 function turnoCategory(raw){
   if(raw==='Dia') return 'Dia';
@@ -1201,14 +1189,23 @@ function renderOverview(){
       for(var d=STATE.startDoy; d<=STATE.endDoy; d++){
         var wd = new Date(DATE_BASE+d*86400000).getUTCDay();
         if(wd===0){ tbody+='<td class="pd-heat-cell" colspan="2" data-day="'+d+'" style="background:#161b26;color:#3d4658;font-size:8px;">dom</td>'; continue; }
-        var rowsMD = ROWS.filter(function(r){return r[1]===m && r[0]===d;}).filter(matchesGlobalFilters).filter(isValidDesemp);
-        var sessionsD = buildSessions(rowsMD.filter(function(r){ return turnoBucket(r)==='D'; }), false).filter(function(s){return s.desemp!==null;});
-        var sessionsN = buildSessions(rowsMD.filter(function(r){ return turnoBucket(r)==='N'; }), false).filter(function(s){return s.desemp!==null;});
+        var rowsMDraw = ROWS.filter(function(r){return r[1]===m && r[0]===d;}).filter(matchesGlobalFilters);
+        var rowsMDrawD = rowsMDraw.filter(function(r){ return turnoBucket(r)==='D'; });
+        var rowsMDrawN = rowsMDraw.filter(function(r){ return turnoBucket(r)==='N'; });
+        var sessionsD = buildSessions(rowsMDrawD.filter(isValidDesemp), false).filter(function(s){return s.desemp!==null;});
+        var sessionsN = buildSessions(rowsMDrawN.filter(isValidDesemp), false).filter(function(s){return s.desemp!==null;});
         var border = d===TODAY_DOY ? 'border:1.5px dashed #4dabf7;' : '';
         if(sessionsD.length){
           var vD = sessionsD.reduce(function(a,s){return a+clampDesemp(s.desemp);},0)/sessionsD.length;
           var cD = heatColor(vD);
           tbody += '<td class="pd-heat-cell" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'background:'+cD.bg+';color:'+cD.text+';">'+Math.round(vD)+'%</td>';
+        } else if(rowsMDrawD.length){
+          // Tem apontamento nesse dia/turno, mas nenhum com desempenho válido pra calcular (ex:
+          // peças previstas = 0 naquela linha) -- diferente de "não rodou": alguém apontou, só que
+          // sem dado suficiente pra virar %. Fica visualmente separado do "·" (sem apontamento
+          // nenhum) pra não confundir contagem manual com "Máquinas paradas" -- essa máquina
+          // corretamente NÃO conta como parada, já que teve atividade registrada.
+          tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="'+rowsMDrawD.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
         } else {
           tbody += '<td class="pd-heat-cell empty" data-day="'+d+'" style="'+border+'">·</td>';
         }
@@ -1216,6 +1213,8 @@ function renderOverview(){
           var vN = sessionsN.reduce(function(a,s){return a+clampDesemp(s.desemp);},0)/sessionsN.length;
           var cN = heatColor(vN);
           tbody += '<td class="pd-heat-cell" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'background:'+cN.bg+';color:'+cN.text+';">'+Math.round(vN)+'%</td>';
+        } else if(rowsMDrawN.length){
+          tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="'+rowsMDrawN.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
         } else {
           tbody += '<td class="pd-heat-cell empty" data-day="'+d+'" style="'+border+'">·</td>';
         }
@@ -1883,49 +1882,18 @@ document.getElementById('pd-cfg-apply').addEventListener('click', function(){
   renderAll();
   switchView('geral');
 });
-// Busca os dados via JSONP (tag <script>), não fetch() -- uma resposta do Apps Script (ContentService)
-// nunca carrega o cabeçalho Access-Control-Allow-Origin liberando outra origem, então um fetch()
-// daqui de fora do Google (Vercel/GitHub Pages) tem a chamada bloqueada pelo navegador mesmo que o
-// Apps Script processe e responda com sucesso -- é um erro de CORS, não um erro do nosso código. Uma
-// tag <script src="..."> não sofre essa restrição, então é isso que usamos: o servidor (Code.gs,
-// doGet com &callback=NOME) embrulha os dados numa chamada de função em vez de devolver JSON puro.
-function fetchRowsFromWebApp(){
-  return new Promise(function(resolve, reject){
-    var callbackName = '__pdJsonpCallback_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
-    var script = document.createElement('script');
-    var timeoutId;
-    function cleanup(){
-      delete window[callbackName];
-      if(script.parentNode) script.parentNode.removeChild(script);
-      clearTimeout(timeoutId);
-    }
-    window[callbackName] = function(data){
-      cleanup();
-      if(data && !Array.isArray(data) && data.error){ reject(new Error(data.error)); return; }
-      if(!Array.isArray(data)){ reject(new Error('Resposta inesperada do servidor -- não veio uma lista de apontamentos. Confira se a URL termina em /exec e se o App da Web está implantado com acesso "Qualquer pessoa".')); return; }
-      if(data.length === 0){ reject(new Error('A planilha respondeu, mas não tem nenhum apontamento válido. Rode debugColunas() no Apps Script (Ver → Registros) pra ver o motivo.')); return; }
-      resolve(data);
-    };
-    timeoutId = setTimeout(function(){
-      cleanup();
-      reject(new Error('Tempo esgotado (20s) esperando resposta do App da Web -- confira se a URL em WEBAPP_URL está certa e se a implantação está ativa.'));
-    }, 20000);
-    script.onerror = function(){
-      cleanup();
-      reject(new Error('Não consegui carregar o script do App da Web -- confira se a URL termina em /exec e se a implantação está ativa (Implantar → Gerenciar implantações).'));
-    };
-    var sep = WEBAPP_URL.indexOf('?')===-1 ? '?' : '&';
-    script.src = WEBAPP_URL + sep + 'format=json&callback=' + callbackName;
-    document.head.appendChild(script);
-  });
-}
-
 document.getElementById('pd-refresh-btn').addEventListener('click', function(){
   var btn = this;
+  if (typeof google === 'undefined' || !google.script || !google.script.run) {
+    // arquivo estático (fora do Apps Script) -- não tem servidor pra consultar, só marca a hora
+    var now=new Date(); var p=function(n){return String(n).padStart(2,'0');};
+    document.getElementById('pd-updated-value').textContent = 'conferido '+p(now.getDate())+'/'+p(now.getMonth()+1)+' '+p(now.getHours())+':'+p(now.getMinutes());
+    return;
+  }
   btn.disabled = true;
   var svg = btn.querySelector('svg'); if(svg) svg.style.animation = 'spin 0.8s linear infinite';
-  fetchRowsFromWebApp()
-    .then(function(freshRows){
+  google.script.run
+    .withSuccessHandler(function(freshRows){
       ROWS = freshRows;
       LATEST_DOY = ROWS.reduce(function(m,r){ return r[0]>m?r[0]:m; }, 0);
       TODAY_DOY = LATEST_DOY;
@@ -1937,11 +1905,12 @@ document.getElementById('pd-refresh-btn').addEventListener('click', function(){
       btn.disabled = false;
       if(svg) svg.style.animation = '';
     })
-    .catch(function(err){
-      alert('Não consegui buscar dados novos: ' + err.message);
+    .withFailureHandler(function(err){
+      alert('Não consegui buscar dados novos da planilha: ' + (err && err.message ? err.message : err));
       btn.disabled = false;
       if(svg) svg.style.animation = '';
-    });
+    })
+    .refreshData();
 });
 
 function doyToISO(doy){ var d=new Date(DATE_BASE+doy*86400000); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
@@ -1955,37 +1924,9 @@ function initDateInputs(){
   endEl.min = startEl.value;
   startEl.max = endEl.value;
 }
-function bootDashboardWithData(freshRows){
-  ROWS = freshRows;
-  LATEST_DOY = ROWS.reduce(function(m,r){ return r[0]>m?r[0]:m; }, 0);
-  TODAY_DOY = LATEST_DOY;
-  DEFAULT_START_DOY = firstDayOfMonthDoy(LATEST_DOY);
-  STATE.startDoy = DEFAULT_START_DOY;
-  STATE.endDoy = LATEST_DOY;
-  initDateInputs();
-  populateGlobalFilterOptions();
-  renderAll();
-  var overlay = document.getElementById('pd-loading-overlay');
-  if(overlay) overlay.remove();
-}
-function showLoadError(err){
-  var overlay = document.getElementById('pd-loading-overlay');
-  if(!overlay) return;
-  overlay.innerHTML =
-    '<div style="max-width:540px;text-align:left;">' +
-    '<div style="color:#ef4444;font-size:17px;font-weight:700;margin-bottom:10px;">Não consegui carregar os dados</div>' +
-    '<div style="font-family:var(--font-num,monospace);font-size:13px;color:#e9edf4;background:#111722;border:1px solid #1e2531;border-radius:8px;padding:10px 12px;margin-bottom:14px;">'+String(err && err.message || err).replace(/</g,'&lt;')+'</div>' +
-    '<div style="color:#8b94a6;font-size:12.5px;line-height:1.6;">Confira, nesta ordem:<br>' +
-    '1. A variável <code>WEBAPP_URL</code> no topo do arquivo (procure por "COLE_AQUI") está preenchida com a URL certa, terminando em <code>/exec</code>.<br>' +
-    '2. No Apps Script: Implantar → Gerenciar implantações → confirme que o App da Web está ativo com acesso "Qualquer pessoa".<br>' +
-    '3. Abra a URL do WEBAPP_URL + <code>?format=json</code> direto numa aba do navegador -- deve aparecer uma lista de dados começando com <code>[[</code>. Se aparecer outra coisa (tela de login do Google, erro, HTML), o problema está na implantação, não neste arquivo.</div>' +
-    '</div>';
-}
-if(!WEBAPP_URL || WEBAPP_URL.indexOf('COLE_AQUI') !== -1){
-  showLoadError(new Error('A URL do App da Web ainda não foi preenchida (variável WEBAPP_URL no topo do arquivo Dashboard-static.html).'));
-} else {
-  fetchRowsFromWebApp().then(bootDashboardWithData).catch(showLoadError);
-}
+initDateInputs();
+populateGlobalFilterOptions();
+renderAll();
 
 // Sincroniza a barra de rolagem de cima (finta, só pra dar acesso rápido ao scroll horizontal
 // sem precisar descer a página inteira) com a barra real embaixo da tabela do mapa de calor.
