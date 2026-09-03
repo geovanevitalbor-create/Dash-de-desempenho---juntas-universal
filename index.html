@@ -180,7 +180,8 @@
   .logo-card{
     display:flex;align-items:center;justify-content:center;padding:.6rem 0;
   }
-  .logo-img{display:block;height:var(--logo-altura-inicial,7rem);width:auto;}
+  .logo-img{display:block;height:var(--logo-altura-inicial,7rem);width:auto;opacity:0;transition:opacity .25s ease;}
+  .logo-img.pronta{opacity:1;}
   .brandmark .sub{font-size:2.1rem;font-weight:800;letter-spacing:-.01em;}
   .btn-iniciar{
     padding:1.35rem 5rem;border-radius:100px;
@@ -675,7 +676,8 @@
     display:flex;justify-content:center;padding-bottom:1rem;margin-bottom:.8rem;
     border-bottom:1px solid var(--border);
   }
-  .admin-sidebar-logo img{height:2.5rem;width:auto;}
+  .admin-sidebar-logo img{height:2.5rem;width:auto;opacity:0;transition:opacity .25s ease;}
+  .admin-sidebar-logo img.pronta{opacity:1;}
   .btn-back-admin{
     display:flex;align-items:center;gap:.6rem;padding:.7rem .6rem;
     color:var(--text-dim);font-size:.85rem;font-weight:700;margin-bottom:1.2rem;
@@ -3987,7 +3989,7 @@ var qrcode = function() {
         <span>Encerrar Turno</span>
       </button>
     </div>
-    <div class="versao-build-canto">v2026.09.03-36</div>
+    <div class="versao-build-canto">v2026.09.03-37</div>
   </section>
 
   <!-- ===================== ADMIN: CADASTRO E ANÁLISE ===================== -->
@@ -4028,7 +4030,7 @@ var qrcode = function() {
           <span>Sair do Admin</span>
         </button>
       </nav>
-      <div class="admin-versao-build">v2026.09.03-36</div>
+      <div class="admin-versao-build">v2026.09.03-37</div>
 
       <div class="admin-conteudo">
         <!-- ---- DASHBOARD ---- -->
@@ -4785,6 +4787,12 @@ function preencherFormularioDoTema(tema){
 // (sem essa separação, cairia na mesma armadilha de ordenação assíncrona documentada acima
 // pras listas de turno/operador/OP). maybeSingle, não single: linha pode não existir ainda
 // se ninguém salvou uma aparência customizada — nesse caso fica no padrão do CSS, sem erro.
+function revelarLogo(){
+  const inicial = document.getElementById('logo-tela-inicial');
+  const sidebar = document.getElementById('logo-sidebar-admin');
+  if(inicial) inicial.classList.add('pronta');
+  if(sidebar) sidebar.classList.add('pronta');
+}
 function aplicarLogo(url, altura){
   const inicial = document.getElementById('logo-tela-inicial');
   const sidebar = document.getElementById('logo-sidebar-admin');
@@ -4801,6 +4809,11 @@ function aplicarLogo(url, altura){
   const slider = document.getElementById('tema-logo-altura'), valorTexto = document.getElementById('tema-logo-altura-valor');
   if(slider) slider.value = alturaFinal;
   if(valorTexto) valorTexto.textContent = alturaFinal + 'rem';
+  // só agora — depois de já ter aplicado a logo certa (customizada ou, na ausência dela, a
+  // padrão que já estava craveada no HTML) — a imagem aparece. Antes disso ela nasce
+  // invisível (opacity:0 no CSS), pra nunca mostrar a padrão só de passagem enquanto espera
+  // a resposta do banco (o "flash" da marca antiga que o Thiago via antes dessa mudança).
+  revelarLogo();
 }
 async function carregarTema(){
   try{
@@ -4811,9 +4824,22 @@ async function carregarTema(){
     aplicarTema(tema);
     preencherFormularioDoTema(tema);
     aplicarLogo(data.logo_url, data.logo_altura);
-  } catch(err){ console.error('[Supabase] falha ao carregar tema:', err); }
+  } catch(err){
+    console.error('[Supabase] falha ao carregar tema:', err);
+  } finally {
+    revelarLogo();
+  }
 }
 carregarTema();
+// Rede de segurança ADICIONAL, fora do try/catch/finally de cima: em teste, uma consulta ao
+// Supabase em certas condições de rede não resolve nem rejeita — fica pendente pra sempre. Isso
+// significa que nem o catch nem o finally de carregarTema() chegam a rodar, e a logo (que nasce
+// invisível de propósito, ver .logo-img no CSS) ficaria escondida pra sempre. Esse timeout roda
+// em paralelo, sem depender da Promise de carregarTema() terminar — revela a logo (com o que já
+// estiver craveado no HTML, a padrão) depois de 4s de qualquer jeito. Se carregarTema() terminar
+// antes e já tiver revelado com a logo certa, isso não faz nada de diferente (revelarLogo só
+// adiciona uma classe CSS, chamar de novo não tem efeito colateral nenhum).
+setTimeout(revelarLogo, 4000);
 
 let logoUrlPendente = null; // logo recém enviada nesta sessão, ainda não salva — guarda aqui até clicar Salvar
 document.getElementById('tema-logo-input').addEventListener('change', async (e)=>{
