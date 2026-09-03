@@ -4008,7 +4008,7 @@ var qrcode = function() {
         <span>Encerrar Turno</span>
       </button>
     </div>
-    <div class="versao-build-canto">v2026.09.03-38</div>
+    <div class="versao-build-canto">v2026.09.03-39</div>
   </section>
 
   <!-- ===================== ADMIN: CADASTRO E ANÁLISE ===================== -->
@@ -4049,7 +4049,7 @@ var qrcode = function() {
           <span>Sair do Admin</span>
         </button>
       </nav>
-      <div class="admin-versao-build">v2026.09.03-38</div>
+      <div class="admin-versao-build">v2026.09.03-39</div>
 
       <div class="admin-conteudo">
         <!-- ---- DASHBOARD ---- -->
@@ -7429,13 +7429,24 @@ async function carregarMapaCalor(){
   // reintroduziria o mesmo erro de somar "previstas" indevidamente, um nível acima).
   // Sessão com esperado=0 é ESTADO 3 do manual: apontou, mas sem meta válida — entra como
   // "tem apontamento" (não conta como parada), mas não participa da média/soma de desempenho.
+  //
+  // TRAVAMENTO EM 120%: uma sessão MUITO curta (poucos minutos) com uma contagem de peças que
+  // só faz sentido pra um período bem mais longo — erro de digitação, ou início/fim rápido
+  // demais na máquina — gera uma razão tecnicamente correta pela fórmula, mas impossível na
+  // prática (840%, 2263%...). Em vez de tentar adivinhar/filtrar isso na hora de gravar (não dá
+  // pra saber com certeza que uma sessão é "inválida" só pela duração curta — pode ser real),
+  // trava-se o que ENTRA na média: nenhuma sessão pesa mais que 120% na conta agregada, do
+  // mesmo jeito que a referência do Thiago já faz (clampDesemp). O dado bruto no banco continua
+  // intacto — só a leitura agregada (célula, resumo) fica protegida de um valor absurdo puxar
+  // tudo junto com ele.
+  const DESEMPENHO_MAX_RAZAO = 1.2; // 120%
   const celulas = {};
   Object.values(sessoes).forEach(s => {
     const chaveCelula = `${s.maquina}|${s.turnoId}|${s.dia}`;
     if(!celulas[chaveCelula]) celulas[chaveCelula] = {sessoesValidas:[], temApontamentoInvalido:false, refugoTotal:0, qtdPecasTotal:0};
     const c = celulas[chaveCelula];
     if(s.esperado > 0){
-      c.sessoesValidas.push(s.injetadas / s.esperado);
+      c.sessoesValidas.push(Math.min(s.injetadas / s.esperado, DESEMPENHO_MAX_RAZAO));
       c.refugoTotal += s.refugo;
       c.qtdPecasTotal += s.qtdPecas;
     } else {
@@ -7676,15 +7687,27 @@ function renderDashboard(){
   // Desempenho e refugo médios da sessão inteira (todos os turnos finalizados) — soma real
   // sobre soma real, mesma lógica de agruparRefugoPor logo abaixo, não média de percentuais
   // individuais (turno pequeno não pesa igual a turno grande na conta).
+  //
+  // TRAVAMENTO EM 120%: mesmo raciocínio do mapa de calor (ver carregarMapaCalor) — uma sessão
+  // muito curta com contagem de peças desproporcional gera uma razão tecnicamente correta mas
+  // impossível na prática. Aqui a soma é feita nos numeradores/denominadores brutos, então o
+  // travamento entra creditando no máximo 120% do esperado de CADA turno pra soma — garante
+  // matematicamente que a razão final (soma ÷ soma) nunca passa de 120%, sem precisar de um
+  // segundo travamento solto no resultado final.
+  const DESEMPENHO_MAX_RAZAO_SESSAO = 1.2; // 120%
   let somaInjetadas=0, somaEsperado=0, somaRefugo=0, somaPecas=0;
   HISTORICO_TURNOS.forEach(h => {
     const horas = h.duracaoMs / 3600000;
-    somaInjetadas += h.injetadas || 0;
-    somaEsperado += (h.metaHora||0) * horas;
+    const esperadoDesteTurno = (h.metaHora||0) * horas;
+    const injetadasCreditadas = esperadoDesteTurno > 0
+      ? Math.min(h.injetadas||0, esperadoDesteTurno * DESEMPENHO_MAX_RAZAO_SESSAO)
+      : (h.injetadas||0);
+    somaInjetadas += injetadasCreditadas;
+    somaEsperado += esperadoDesteTurno;
     somaRefugo += h.refugo || 0;
     somaPecas += h.qtdPecas || 0;
   });
-  const desempenhoSessao = somaEsperado > 0 ? Math.min(150, (somaInjetadas/somaEsperado)*100) : 0;
+  const desempenhoSessao = somaEsperado > 0 ? (somaInjetadas/somaEsperado)*100 : 0;
   const refugoSessao = somaPecas > 0 ? (somaRefugo/somaPecas)*100 : 0;
 
   // hero (2 colunas) com o detalhamento por status + 2 stats menores ao lado — em vez de
