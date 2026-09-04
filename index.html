@@ -1270,26 +1270,31 @@ function emptyDaysUntilToday(fromDay, machine, bucket){
 }
 
 /** Status de MÁQUINA INTEIRA (não um dia/turno específico) -- usa o mesmo STATUS_MAP e o mesmo
- * backend de sempre, só que com o turno sentinela 'ALL' em vez de 'D'/'N'. Uma vez marcado,
- * continua valendo pra QUALQUER dia futuro (mesmo os que ainda nem existem nos dados) até a
- * máquina ter um apontamento real de novo -- aí o status "resolve" sozinho, sem precisar de ação
- * manual. "Remover" reaproveita o mesmo upsert do backend, salvando status vazio na mesma chave.
- */
+ * backend de sempre. O backend só aceita turno D ou N (rejeita qualquer outro valor com "Turno
+ * inválido"), então em vez de inventar um turno sentinela, salva os DOIS de verdade (D e N) com o
+ * mesmo status, prefixado com "[Máquina] " pra essa função reconhecer que veio de um marcação de
+ * máquina inteira e não de um clique numa célula específica. Uma vez marcado, continua valendo pra
+ * QUALQUER dia futuro (mesmo os que ainda nem existem nos dados) até a máquina ter um apontamento
+ * real de novo -- aí o status "resolve" sozinho, sem precisar de ação manual. "Remover" reaproveita
+ * o mesmo upsert do backend, salvando status vazio na mesma chave (nos dois turnos). */
+var MACHINE_WIDE_PREFIX = '[Máquina] ';
 function buildMachineWideActive(){
   var byMachine = {};
   Object.keys(STATUS_MAP).forEach(function(k){
-    var parts = k.split('_');
-    if(parts.length!==3 || parts[2]!=='ALL') return;
     var v = STATUS_MAP[k];
-    if(!v.status) return; // status vazio = removido manualmente
-    var machine = Number(parts[1]), startDay = Number(parts[0]);
-    if(!byMachine[machine]) byMachine[machine]=[];
-    byMachine[machine].push({startDay:startDay, status:v.status, obs:v.obs});
+    if(!v.status || v.status.indexOf(MACHINE_WIDE_PREFIX)!==0) return;
+    var parts = k.split('_');
+    if(parts.length!==3) return;
+    var startDay = Number(parts[0]), machine = Number(parts[1]);
+    var realStatus = v.status.slice(MACHINE_WIDE_PREFIX.length);
+    if(!byMachine[machine]) byMachine[machine]={};
+    byMachine[machine][startDay] = {startDay:startDay, status:realStatus, obs:v.obs}; // D e N do mesmo evento dedupam pelo startDay
   });
   var active = {};
   Object.keys(byMachine).forEach(function(mk){
     var m = Number(mk);
-    var latest = byMachine[mk].sort(function(a,b){return b.startDay-a.startDay;})[0];
+    var startDays = Object.keys(byMachine[mk]).map(Number).sort(function(a,b){return b-a;});
+    var latest = byMachine[mk][startDays[0]];
     // Dia do primeiro apontamento real a partir do startDay (se já existir) -- é o dia em que a
     // máquina "voltou". O status vale pra [startDay, esseDia) -- ANTES do retorno continua valendo
     // certinho; só a partir do retorno em diante é que some. endDay=null = ainda em aberto (nunca voltou).
@@ -1462,10 +1467,19 @@ function openMachineModal(m){
 
   if(mActive){
     document.getElementById('pd-mstatus-remove').onclick = function(){
-      saveMachineStatusRemote(mActive.startDay, m, 'ALL', '', '').then(function(){
-        STATUS_MAP[statusKey(mActive.startDay, m, 'ALL')] = {status:'', obs:''};
+      var btn = document.getElementById('pd-mstatus-remove');
+      btn.disabled = true; btn.textContent = 'Removendo...';
+      Promise.all([
+        saveMachineStatusRemote(mActive.startDay, m, 'D', '', ''),
+        saveMachineStatusRemote(mActive.startDay, m, 'N', '', '')
+      ]).then(function(){
+        STATUS_MAP[statusKey(mActive.startDay, m, 'D')] = {status:'', obs:''};
+        STATUS_MAP[statusKey(mActive.startDay, m, 'N')] = {status:'', obs:''};
         renderAll();
         openMachineModal(m);
+      }).catch(function(err){
+        btn.disabled = false; btn.textContent = 'Remover';
+        alert('Erro ao remover: '+err.message);
       });
     };
   } else {
@@ -1487,9 +1501,14 @@ function openMachineModal(m){
       // sozinho na hora, por causa de um apontamento que já existia antes de marcar.
       var todayHasData = ROWS.some(function(r){ return r[1]===m && r[0]===LATEST_DOY; });
       var startDay = todayHasData ? LATEST_DOY+1 : LATEST_DOY;
+      var fullStatus = MACHINE_WIDE_PREFIX + selectedCat;
       msgEl.textContent = 'Salvando...'; msgEl.style.color = 'var(--text-faint)';
-      saveMachineStatusRemote(startDay, m, 'ALL', selectedCat, obs).then(function(){
-        STATUS_MAP[statusKey(startDay, m, 'ALL')] = {status:selectedCat, obs:obs};
+      Promise.all([
+        saveMachineStatusRemote(startDay, m, 'D', fullStatus, obs),
+        saveMachineStatusRemote(startDay, m, 'N', fullStatus, obs)
+      ]).then(function(){
+        STATUS_MAP[statusKey(startDay, m, 'D')] = {status:fullStatus, obs:obs};
+        STATUS_MAP[statusKey(startDay, m, 'N')] = {status:fullStatus, obs:obs};
         renderAll();
         openMachineModal(m);
       }).catch(function(err){
@@ -1631,7 +1650,8 @@ function renderOverview(){
           // corretamente NÃO conta como parada, já que teve atividade registrada.
           tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="'+rowsMDrawD.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
         } else {
-          var stD = STATUS_MAP[statusKey(d, m, 'D')];
+          var stDraw = STATUS_MAP[statusKey(d, m, 'D')];
+          var stD = (stDraw && stDraw.status.indexOf(MACHINE_WIDE_PREFIX)!==0) ? stDraw : null;
           var wideD = machineWideActive[m];
           var effD = stD || (wideD && d>=wideD.startDay && (wideD.endDay===null || d<wideD.endDay) ? wideD : null);
           if(effD){
@@ -1647,7 +1667,8 @@ function renderOverview(){
         } else if(rowsMDrawN.length){
           tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="'+rowsMDrawN.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
         } else {
-          var stN = STATUS_MAP[statusKey(d, m, 'N')];
+          var stNraw = STATUS_MAP[statusKey(d, m, 'N')];
+          var stN = (stNraw && stNraw.status.indexOf(MACHINE_WIDE_PREFIX)!==0) ? stNraw : null;
           var wideN = machineWideActive[m];
           var effN = stN || (wideN && d>=wideN.startDay && (wideN.endDay===null || d<wideN.endDay) ? wideN : null);
           if(effN){
