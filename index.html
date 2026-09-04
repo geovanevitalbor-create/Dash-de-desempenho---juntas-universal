@@ -13,6 +13,10 @@
     --text:#e9edf4; --text-dim:#8b94a6; --text-faint:#5a6376;
     --red:#ef4444; --orange:#f97316; --yellow:#eab308; --green:#22c55e;
     --blue:#4dabf7;
+    /* Paleta oficial Juntas Universal -- usada na página Turnos (anel de progresso, ícones,
+       acentos) pra essa página específica ter a cara da marca, sem mudar o resto do dashboard. */
+    --brand-green:#00833E; --brand-green-dark:#00642F; --brand-green-light:#DFF2E6; --brand-green-deep:#003A1C;
+    --brand-amber:#FBBF24; --brand-red:#DC2626;
     --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     --font-num:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
   }
@@ -239,17 +243,26 @@
     border-color:var(--blue);color:#8fcaff;box-shadow:0 0 0 1px rgba(77,171,247,.25), 0 2px 6px rgba(77,171,247,.18);}
   .pd-seg button:hover:not(.active){border-color:var(--text-faint);color:var(--text);transform:translateY(-1px);}
   .pd-turno-card{display:flex;flex-direction:column;gap:16px;}
-  .pd-turno-head{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--text);}
-  .pd-turno-head svg{width:20px;height:20px;color:var(--blue);flex-shrink:0;}
-  .pd-turno-badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-  @media (max-width:640px){.pd-turno-badges{grid-template-columns:repeat(2,1fr);}}
-  .pd-turno-badge{background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center;}
-  .pd-turno-badge-label{font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
-  .pd-turno-badge-value{font-family:var(--font-num);font-size:19px;font-weight:700;margin-top:4px;color:var(--text);}
-  .pd-turno-badge-warn .pd-turno-badge-value{color:var(--orange);}
-  .pd-turno-gauges{display:flex;gap:24px;flex-wrap:wrap;}
-  .pd-turno-gauges .pd-gauge-card{min-width:180px;}
-  .pd-turno-gauges .pd-gauge-value{text-align:center;font-family:var(--font-num);font-size:22px;font-weight:600;margin-top:-16px;}
+  .pd-turno-head{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:var(--text);
+    padding-bottom:14px;border-bottom:1px solid var(--border);}
+  .pd-turno-head svg{width:19px;height:19px;color:var(--brand-green);flex-shrink:0;}
+  .pd-radial-gauge{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .pd-radial-gauge-label{font-size:11px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+  .pd-radial-gauge-ring-wrap{position:relative;width:148px;height:148px;}
+  .pd-radial-gauge-ring-wrap svg{width:100%;height:100%;display:block;}
+  .pd-radial-gauge-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
+  .pd-radial-gauge-value{font-family:var(--font-num);font-size:26px;font-weight:700;color:var(--text);line-height:1;}
+  .pd-radial-gauge-sub{font-family:var(--font-num);font-size:10px;color:var(--text-faint);margin-top:5px;}
+  .pd-turno-summary{display:flex;gap:0;align-items:stretch;flex-wrap:wrap;background:var(--card-2);
+    border:1px solid var(--border);border-radius:12px;padding:18px 24px;}
+  .pd-turno-stats{display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:180px;
+    flex-shrink:0;border-right:1px solid var(--border);padding-right:24px;margin-right:24px;}
+  @media (max-width:760px){.pd-turno-stats{border-right:none;margin-right:0;padding-right:0;border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:4px;width:100%;}}
+  .pd-turno-stat{display:flex;justify-content:space-between;align-items:baseline;gap:16px;}
+  .pd-turno-stat-label{font-size:11.5px;color:var(--text-dim);font-weight:500;}
+  .pd-turno-stat-value{font-family:var(--font-num);font-size:17px;font-weight:700;color:var(--text);}
+  .pd-turno-stat-of{font-size:11.5px;color:var(--text-faint);font-weight:500;}
+  .pd-turno-gauges{display:flex;gap:20px;flex:1;justify-content:space-around;flex-wrap:wrap;align-items:center;}
   .pd-turno-hist-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;}
   .pd-turno-count-badge{background:var(--blue);color:#04121e;font-family:var(--font-num);font-weight:700;font-size:12px;padding:3px 11px;border-radius:999px;flex-shrink:0;}
   @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
@@ -888,6 +901,46 @@ function renderGauge(containerId, value, opts){
     '</svg>';
 }
 
+/** Mesma lógica de statusColor(), mas devolvendo as cores oficiais da marca em vez da paleta genérica. */
+function brandStatusColor(v, meta, invert){
+  var ok = invert ? v<=meta : v>=meta;
+  var near = invert ? v<=meta*1.4 : v>=meta*0.85;
+  return ok ? '#00833E' : (near ? '#FBBF24' : '#DC2626');
+}
+
+/**
+ * Anel de progresso circular (sem ponteiro, sem arco-íris) -- usado só na página Turnos, com as
+ * cores oficiais da marca Juntas Universal em vez da paleta genérica do resto do dashboard.
+ * value pode passar de 100 (desempenho trava em 120%) -- o ANEL visualmente para em 100% preenchido,
+ * mas o número no centro mostra o valor real, sem esconder que passou da meta.
+ * invert=true inverte a lógica de cor (refugo: menor é melhor, então o anel some conforme melhora).
+ */
+function renderRadialGauge(containerId, value, opts){
+  var size = 148, stroke = 13, r = (size-stroke)/2, cx = size/2, cy = size/2;
+  var scaleMax = opts.scaleMax || 100;
+  var circumference = 2*Math.PI*r;
+  var fraction = Math.max(0, Math.min(scaleMax, value)) / scaleMax;
+  var offset = circumference * (1-fraction);
+  var color = brandStatusColor(value, opts.meta, !!opts.invert);
+  var sub = opts.invert ? ('meta ≤'+opts.meta+'%') : ('meta '+opts.meta+'%');
+  document.getElementById(containerId).innerHTML =
+    '<div class="pd-radial-gauge">'+
+      '<div class="pd-radial-gauge-label">'+opts.label+'</div>'+
+      '<div class="pd-radial-gauge-ring-wrap">'+
+        '<svg viewBox="0 0 '+size+' '+size+'">'+
+          '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#1a2029" stroke-width="'+stroke+'"/>'+
+          '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+stroke+'" '+
+            'stroke-linecap="round" stroke-dasharray="'+circumference.toFixed(2)+'" stroke-dashoffset="'+offset.toFixed(2)+'" '+
+            'transform="rotate(-90 '+cx+' '+cy+')" style="transition:stroke-dashoffset .4s ease;"/>'+
+        '</svg>'+
+        '<div class="pd-radial-gauge-center">'+
+          '<div class="pd-radial-gauge-value" style="color:'+color+';">'+fmtPct(value,1)+'</div>'+
+          '<div class="pd-radial-gauge-sub">'+sub+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+}
+
 
 function renderLineChart(containerId, dayKeys, values, opts){
   var width=880,height=320;
@@ -1464,15 +1517,16 @@ function renderTurnos(){
 
     return '<div class="pd-card pd-turno-card">'+
       '<div class="pd-turno-head">'+turnoSectionIcon(t.turno)+'<span>Turno '+turnoDisplayLabel(t.turno)+'</span></div>'+
-      '<div class="pd-turno-badges">'+
-        '<div class="pd-turno-badge"><div class="pd-turno-badge-label">Ferramentas</div><div class="pd-turno-badge-value">'+t.ferramentas+'</div></div>'+
-        '<div class="pd-turno-badge"><div class="pd-turno-badge-label">Máquinas</div><div class="pd-turno-badge-value">'+t.maquinasAtivas+'</div></div>'+
-        '<div class="pd-turno-badge"><div class="pd-turno-badge-label">Operadores</div><div class="pd-turno-badge-value">'+t.operadores+'</div></div>'+
-        '<div class="pd-turno-badge pd-turno-badge-warn"><div class="pd-turno-badge-label">Máq. paradas</div><div class="pd-turno-badge-value">'+t.maquinasParadas+'</div></div>'+
-      '</div>'+
-      '<div class="pd-turno-gauges">'+
-        '<div class="pd-gauge-card"><div class="pd-card-title" style="align-self:flex-start;">Desempenho</div><div id="'+t.gaugePerfId+'"></div><div class="pd-gauge-value">'+fmtPct(clampDesemp(t.desemp))+'</div></div>'+
-        '<div class="pd-gauge-card"><div class="pd-card-title" style="align-self:flex-start;">Refugo</div><div id="'+t.gaugeRefId+'"></div><div class="pd-gauge-value">'+fmtPct(t.refugo)+'</div></div>'+
+      '<div class="pd-turno-summary">'+
+        '<div class="pd-turno-stats">'+
+          '<div class="pd-turno-stat"><span class="pd-turno-stat-label">Ferramentas</span><span class="pd-turno-stat-value">'+t.ferramentas+'</span></div>'+
+          '<div class="pd-turno-stat"><span class="pd-turno-stat-label">Operadores</span><span class="pd-turno-stat-value">'+t.operadores+'</span></div>'+
+          '<div class="pd-turno-stat"><span class="pd-turno-stat-label">Máquinas ativas</span><span class="pd-turno-stat-value">'+t.maquinasAtivas+'<span class="pd-turno-stat-of">/'+FLEET.length+'</span></span></div>'+
+        '</div>'+
+        '<div class="pd-turno-gauges">'+
+          '<div id="'+t.gaugePerfId+'"></div>'+
+          '<div id="'+t.gaugeRefId+'"></div>'+
+        '</div>'+
       '</div>'+
       '<div class="pd-turno-hist-head"><div class="pd-card-title">Histórico por operador</div><span class="pd-turno-count-badge">'+t.rows.length+'</span></div>'+
       '<div class="pd-detail-table-wrap"><table class="pd-detail-table"><thead><tr>'+
@@ -1481,13 +1535,11 @@ function renderTurnos(){
     '</div>';
   }).join('') || '<div class="pd-card"><div class="pd-empty">Sem apontamentos no período/filtros selecionados.</div></div>';
 
-  // Os gauges só existem no DOM depois do innerHTML acima -- desenha agora, reaproveitando
-  // renderGauge(), a mesma função dos medidores da Visão Geral.
+  // Os anéis só existem no DOM depois do innerHTML acima -- desenha agora. Usa renderRadialGauge
+  // (cores da marca Juntas Universal), diferente do renderGauge de ponteiro usado na Visão Geral.
   turnoStats.forEach(function(t){
-    renderGauge(t.gaugePerfId, clampDesemp(t.desemp), {scaleMax:120, metaValue:STATE.metaDesemp, zones:[
-      {from:0,to:60,color:'#ef4444'},{from:60,to:75,color:'#f97316'},{from:75,to:90,color:'#eab308'},{from:90,to:120,color:'#22c55e'}]});
-    renderGauge(t.gaugeRefId, t.refugo, {scaleMax:10, metaValue:STATE.metaRefugo, zones:[
-      {from:0,to:3,color:'#22c55e'},{from:3,to:5,color:'#eab308'},{from:5,to:7,color:'#f97316'},{from:7,to:10,color:'#ef4444'}]});
+    renderRadialGauge(t.gaugePerfId, clampDesemp(t.desemp), {label:'Desempenho', meta:STATE.metaDesemp, invert:false});
+    renderRadialGauge(t.gaugeRefId, t.refugo, {label:'Refugo', meta:STATE.metaRefugo, invert:true, scaleMax:Math.max(10, STATE.metaRefugo*3)});
   });
 }
 
