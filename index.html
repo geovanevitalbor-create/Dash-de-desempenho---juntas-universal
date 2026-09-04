@@ -238,6 +238,20 @@
   .pd-seg button.active{background:linear-gradient(180deg,rgba(109,192,255,.22),rgba(77,171,247,.14));
     border-color:var(--blue);color:#8fcaff;box-shadow:0 0 0 1px rgba(77,171,247,.25), 0 2px 6px rgba(77,171,247,.18);}
   .pd-seg button:hover:not(.active){border-color:var(--text-faint);color:var(--text);transform:translateY(-1px);}
+  .pd-turno-card{display:flex;flex-direction:column;gap:16px;}
+  .pd-turno-head{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--text);}
+  .pd-turno-head svg{width:20px;height:20px;color:var(--blue);flex-shrink:0;}
+  .pd-turno-badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  @media (max-width:640px){.pd-turno-badges{grid-template-columns:repeat(2,1fr);}}
+  .pd-turno-badge{background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center;}
+  .pd-turno-badge-label{font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
+  .pd-turno-badge-value{font-family:var(--font-num);font-size:19px;font-weight:700;margin-top:4px;color:var(--text);}
+  .pd-turno-badge-warn .pd-turno-badge-value{color:var(--orange);}
+  .pd-turno-gauges{display:flex;gap:24px;flex-wrap:wrap;}
+  .pd-turno-gauges .pd-gauge-card{min-width:180px;}
+  .pd-turno-gauges .pd-gauge-value{text-align:center;font-family:var(--font-num);font-size:22px;font-weight:600;margin-top:-16px;}
+  .pd-turno-hist-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;}
+  .pd-turno-count-badge{background:var(--blue);color:#04121e;font-family:var(--font-num);font-weight:700;font-size:12px;padding:3px 11px;border-radius:999px;flex-shrink:0;}
   @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 </style>
 </head>
@@ -302,6 +316,10 @@
       <button class="pd-nav-item active" data-view="geral">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
         Visão geral
+      </button>
+      <button class="pd-nav-item" data-view="turnos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="4.5" rx="1.2"/><rect x="3" y="9.75" width="18" height="4.5" rx="1.2"/><rect x="3" y="15.5" width="18" height="4.5" rx="1.2"/></svg>
+        Turnos
       </button>
       <button class="pd-nav-item" data-view="maquinas">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V10l5 3V10l5 3V10l5 3v8H3z"/><path d="M3 21h18"/></svg>
@@ -387,6 +405,12 @@
           </div>
           <div class="pd-heatmap-caption" style="margin-top:10px;margin-bottom:0;">Sempre as 27 injetoras da frota aparecem como linha, mesmo as sem nenhum apontamento no período (ficam com "·" o tempo todo) — assim nenhuma máquina fica "escondida" contando como parada sem dar pra conferir visualmente. Cada dia tem duas colunas: "D" (diurno, fusão de Dia/Comercial/Manhã/Tarde/Outro) e "N" (Noturno). Quatro linhas fixas no fim da grade, cada uma também separada por D/N: "Média de desempenho" = média simples SÓ das máquinas que rodaram naquele dia/turno (soma ÷ quantas rodaram) · "Eficiência" = soma do desempenho de cada máquina que rodou, dividido pelas 27 da frota inteira (não só as que rodaram) — máquina parada entra como 0 na conta, então mostra quanto da capacidade TOTAL foi de fato aproveitada, não só o desempenho de quem trabalhou · "Refugo" = refugos ÷ (refugos + boas), ponderado por peças · "Máquinas paradas" = quantas das 27 injetoras não tiveram NENHUM apontamento naquele dia, NAQUELE turno especificamente (uma máquina que só rodou de noite conta como parada na coluna D) — uma célula roxa com "!" é diferente de "·": significa que teve apontamento, só que sem desempenho válido pra calcular (normalmente peças previstas = 0 naquela linha), então NÃO conta como parada; clique nela pra ver o apontamento e conferir o motivo. Clique no nome da injetora pra abrir o histórico completo, com operadores e ferramentas.</div>
         </div>
+      </div>
+
+      <!-- TURNOS -->
+      <div class="pd-view" id="view-turnos">
+        <div class="pd-top-row" style="grid-template-columns:1fr 1fr 1fr;" id="pd-turnos-totais"></div>
+        <div id="pd-turnos-sections" style="display:flex;flex-direction:column;gap:20px;"></div>
       </div>
 
       <!-- MÁQUINAS -->
@@ -961,12 +985,13 @@ function openDayDetailModal(day, machineFilter, ignoreGlobalFilters, presetBucke
         '<td>INJ '+r[1]+'</td><td>'+effectiveTurno(r)+'</td>'+
         '<td>'+(r[11]||'—')+'</td><td>'+(r[12]||'—')+'</td>'+
         '<td>'+(r[13]||'—')+'</td>'+
+        '<td>'+(r[14]!==null&&r[14]!==undefined?fmtInt(r[14]):'—')+'</td>'+
         '<td>'+(r[3]!==null?fmtPct(r[3],0):'—')+(clamped?' 🔒':'')+'</td>'+
         '<td>'+fmtInt(r[4]||0)+'</td><td>'+fmtInt(r[5]||0)+'</td>'+
         '<td>'+(r[7]!==null?fmtPct(r[7],1):'—')+'</td>'+
         '<td class="pd-detail-motivo" title="'+motivo.replace(/"/g,'&quot;')+'">'+motivo+'</td></tr>';
     }).join('');
-    document.getElementById('pd-detail-tbody').innerHTML = tbodyHtml || '<tr><td colspan="10" class="pd-empty">Nada com esse filtro.</td></tr>';
+    document.getElementById('pd-detail-tbody').innerHTML = tbodyHtml || '<tr><td colspan="11" class="pd-empty">Nada com esse filtro.</td></tr>';
   }
 
   function opt(value,label,selected){ return '<option value="'+value+'"'+(value===selected?' selected':'')+'>'+label+'</option>'; }
@@ -1000,7 +1025,7 @@ function openDayDetailModal(day, machineFilter, ignoreGlobalFilters, presetBucke
     '</div>'+
     '<div id="pd-modal-motivos" style="margin-bottom:16px;"></div>'+
     '<div class="pd-detail-table-wrap"><table class="pd-detail-table"><thead><tr>'+
-      '<th>Injetora</th><th>Turno</th><th>Operador</th><th>Ferramenta</th><th>Cavidades</th><th>Desemp.</th><th>Boas</th><th>Previstas</th><th>Refugo</th><th>Motivo do refugo</th>'+
+      '<th>Injetora</th><th>Turno</th><th>Operador</th><th>Ferramenta</th><th>Cavidades</th><th>Injetadas</th><th>Desemp.</th><th>Boas</th><th>Previstas</th><th>Refugo</th><th>Motivo do refugo</th>'+
     '</tr></thead><tbody id="pd-detail-tbody"></tbody></table></div>';
 
   document.getElementById('pd-modal-overlay').classList.add('show');
@@ -1350,6 +1375,101 @@ function renderOverview(){
   var full = computeFullHistoryDaily();
   renderLineChart('pd-chart-perf', full.perfDays, full.perfValues, {min:0,max:100,goal:STATE.metaDesemp,color:'#22c55e',decimals:0,suffix:'%',kind:'perf',ignoreFilters:true,highlightRange:{start:STATE.startDoy,end:STATE.endDoy}});
   renderLineChart('pd-chart-scrap', full.refDays, full.refValues, {min:0,max:Math.max(12,STATE.metaRefugo*2),goal:STATE.metaRefugo,color:'#ef4444',decimals:1,suffix:'%',kind:'refugo',ignoreFilters:true,highlightRange:{start:STATE.startDoy,end:STATE.endDoy}});
+}
+
+function turnoSectionIcon(turno){
+  if(turno==='Noite') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12h2.5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>';
+}
+function turnoDisplayLabel(t){
+  if(t==='Dia') return 'do Dia';
+  if(t==='Noite') return 'da Noite';
+  if(t==='Tarde') return 'da Tarde';
+  if(t==='Manhã') return 'da Manhã';
+  if(t==='Comercial') return 'Comercial';
+  return t;
+}
+
+/**
+ * Página "Turnos" -- olha a produção pelo ângulo do turno em vez do ângulo da máquina (que é o
+ * mapa de calor). Um bloco por categoria de turno que tiver QUALQUER apontamento no período e
+ * filtros atuais -- não trava em Dia/Tarde/Noite fixos, porque o sistema tem até 6 categorias
+ * configuráveis (Dia, Comercial, Manhã, Tarde, Noite, Outro); mostra só as que existem nos dados,
+ * na ordem de TURNO_SORT_ORDER.
+ */
+function renderTurnos(){
+  var agg = computeAgg(STATE.startDoy, STATE.endDoy);
+
+  document.getElementById('pd-turnos-totais').innerHTML =
+    '<div class="pd-stat-card pd-card"><div class="pd-stat-label">Total previsto</div><div class="pd-stat-value">'+fmtInt(agg.sumPrev)+'</div></div>'+
+    '<div class="pd-stat-card pd-card"><div class="pd-stat-label">Total fabricado</div><div class="pd-stat-value" style="color:#4dabf7">'+fmtInt(agg.sumBoas)+'</div></div>'+
+    '<div class="pd-stat-card pd-card"><div class="pd-stat-label">Total refugo</div><div class="pd-stat-value" style="color:#ef4444">'+fmtInt(agg.sumRefugos)+'</div></div>';
+
+  var turnosPresentes = Array.from(new Set(agg.filtered.map(effectiveTurno))).sort(function(a,b){
+    return turnoSortOrder(a)-turnoSortOrder(b);
+  });
+
+  var turnoStats = turnosPresentes.map(function(turno){
+    var turnoRows = agg.filtered.filter(function(r){ return effectiveTurno(r)===turno; });
+    var turnoOk = turnoRows.filter(isValidDesemp);
+    var turnoRef = turnoRows.filter(function(r){ return r[7]!==null && r[7]>=0 && r[7]<=100; });
+
+    var ferramentas = new Set(turnoRows.map(function(r){return r[12];}).filter(Boolean)).size;
+    var maquinasAtivas = new Set(turnoRows.map(function(r){return r[1];}).filter(function(m){return FLEET.indexOf(m)!==-1;})).size;
+    var operadores = new Set(turnoRows.map(function(r){return r[11];}).filter(Boolean)).size;
+    var maquinasParadas = FLEET.length - maquinasAtivas;
+
+    var sessions = buildSessions(turnoOk, false);
+    var sumBoasT=0, sumPrevT=0; sessions.forEach(function(s){ sumBoasT+=s.boas; sumPrevT+=s.prev; });
+    var desempT = sumPrevT>0 ? sumBoasT/sumPrevT*100 : 0;
+    var sumRefT=0, sumBoasRT=0; turnoRef.forEach(function(r){ sumRefT+=r[6]||0; sumBoasRT+=creditedBoas(r); });
+    var refugoT = (sumRefT+sumBoasRT)>0 ? sumRefT/(sumRefT+sumBoasRT)*100 : 0;
+
+    var idSafe = turno.replace(/[^a-zA-Z0-9]/g,'');
+    return {turno:turno, rows:turnoRows, ferramentas:ferramentas, maquinasAtivas:maquinasAtivas, operadores:operadores,
+      maquinasParadas:maquinasParadas, desemp:desempT, refugo:refugoT,
+      gaugePerfId:'pd-turno-gauge-perf-'+idSafe, gaugeRefId:'pd-turno-gauge-ref-'+idSafe};
+  });
+
+  document.getElementById('pd-turnos-sections').innerHTML = turnoStats.map(function(t){
+    var histRows = t.rows.slice().sort(function(a,b){ return b[0]-a[0]; });
+    var histBody = histRows.map(function(r){
+      var clamped = wasClamped(r);
+      var obs = r[10]||'—';
+      return '<tr'+(clamped?' class="pd-detail-invalid" title="Fora da faixa configurada — contado travado em '+STATE.maxDesemp+'%, não excluído"':'')+'>'+
+        '<td>'+doyToStr(r[0])+'</td><td>'+(r[11]||'—')+'</td><td>'+(r[12]||'—')+'</td><td>'+(r[9]||'—')+'</td>'+
+        '<td>'+fmtInt(r[4]||0)+'</td><td>'+fmtInt(r[5]||0)+'</td>'+
+        '<td>'+(r[14]!==null&&r[14]!==undefined?fmtInt(r[14]):'—')+'</td>'+
+        '<td class="pd-detail-motivo" title="'+obs.replace(/"/g,'&quot;')+'">'+obs+'</td>'+
+        '<td>'+(r[3]!==null?fmtPct(r[3],0):'—')+(clamped?' 🔒':'')+'</td>'+
+        '<td>'+(r[7]!==null?fmtPct(r[7],1):'—')+'</td></tr>';
+    }).join('') || '<tr><td colspan="9" class="pd-empty">Sem apontamentos nesse turno, no período/filtros selecionados.</td></tr>';
+
+    return '<div class="pd-card pd-turno-card">'+
+      '<div class="pd-turno-head">'+turnoSectionIcon(t.turno)+'<span>Turno '+turnoDisplayLabel(t.turno)+'</span></div>'+
+      '<div class="pd-turno-badges">'+
+        '<div class="pd-turno-badge"><div class="pd-turno-badge-label">Ferramentas</div><div class="pd-turno-badge-value">'+t.ferramentas+'</div></div>'+
+        '<div class="pd-turno-badge"><div class="pd-turno-badge-label">Máquinas</div><div class="pd-turno-badge-value">'+t.maquinasAtivas+'</div></div>'+
+        '<div class="pd-turno-badge"><div class="pd-turno-badge-label">Operadores</div><div class="pd-turno-badge-value">'+t.operadores+'</div></div>'+
+        '<div class="pd-turno-badge pd-turno-badge-warn"><div class="pd-turno-badge-label">Máq. paradas</div><div class="pd-turno-badge-value">'+t.maquinasParadas+'</div></div>'+
+      '</div>'+
+      '<div class="pd-turno-gauges">'+
+        '<div class="pd-gauge-card"><div class="pd-card-title" style="align-self:flex-start;">Desempenho</div><div id="'+t.gaugePerfId+'"></div><div class="pd-gauge-value">'+fmtPct(clampDesemp(t.desemp))+'</div></div>'+
+        '<div class="pd-gauge-card"><div class="pd-card-title" style="align-self:flex-start;">Refugo</div><div id="'+t.gaugeRefId+'"></div><div class="pd-gauge-value">'+fmtPct(t.refugo)+'</div></div>'+
+      '</div>'+
+      '<div class="pd-turno-hist-head"><div class="pd-card-title">Histórico por operador</div><span class="pd-turno-count-badge">'+t.rows.length+'</span></div>'+
+      '<div class="pd-detail-table-wrap"><table class="pd-detail-table"><thead><tr>'+
+        '<th>Data</th><th>Operador</th><th>Ferramenta</th><th>Material</th><th>Boas</th><th>Previstas</th><th>Injetadas</th><th>Observação</th><th>Desemp.</th><th>Refugo</th>'+
+      '</tr></thead><tbody>'+histBody+'</tbody></table></div>'+
+    '</div>';
+  }).join('') || '<div class="pd-card"><div class="pd-empty">Sem apontamentos no período/filtros selecionados.</div></div>';
+
+  turnoStats.forEach(function(t){
+    renderGauge(t.gaugePerfId, clampDesemp(t.desemp), {scaleMax:120, metaValue:STATE.metaDesemp, zones:[
+      {from:0,to:60,color:'#ef4444'},{from:60,to:75,color:'#f97316'},{from:75,to:90,color:'#eab308'},{from:90,to:120,color:'#22c55e'}]});
+    renderGauge(t.gaugeRefId, t.refugo, {scaleMax:10, metaValue:STATE.metaRefugo, zones:[
+      {from:0,to:3,color:'#22c55e'},{from:3,to:5,color:'#eab308'},{from:5,to:7,color:'#f97316'},{from:7,to:10,color:'#ef4444'}]});
+  });
 }
 
 function renderMaquinas(){
@@ -1820,6 +1940,7 @@ function renderRelatorios(){
 
 function renderAll(){
   renderOverview();
+  if(STATE.activeView==='turnos') renderTurnos();
   if(STATE.activeView==='maquinas') renderMaquinas();
   if(STATE.activeView==='producao') renderProducao();
   if(STATE.activeView==='refugo') renderRefugo();
@@ -1830,6 +1951,7 @@ function switchView(v){
   STATE.activeView = v;
   document.querySelectorAll('.pd-nav-item').forEach(function(b){ b.classList.toggle('active', b.dataset.view===v); });
   document.querySelectorAll('.pd-view').forEach(function(el){ el.classList.toggle('active', el.id==='view-'+v); });
+  if(v==='turnos') renderTurnos();
   if(v==='maquinas') renderMaquinas();
   if(v==='producao') renderProducao();
   if(v==='refugo') renderRefugo();
