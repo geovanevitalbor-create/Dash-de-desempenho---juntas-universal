@@ -164,6 +164,10 @@
   .pd-detail-table{width:100%;border-collapse:collapse;font-size:11.5px;}
   .pd-detail-table th{position:sticky;top:0;background:#161c27;text-align:left;padding:7px 9px;color:var(--text-faint);
     font-weight:700;font-size:9.5px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+  .pd-detail-table th[data-k]{cursor:pointer;user-select:none;}
+  .pd-detail-table th[data-k]:hover{color:var(--text);}
+  .pd-detail-table th[data-k].sorted{color:var(--blue);}
+  .pd-detail-table th[data-k].sorted::after{content:' ▾';}
   .pd-detail-table td{padding:6px 9px;border-bottom:1px solid #161c27;font-family:var(--font-num);white-space:nowrap;}
   .pd-detail-table tbody tr:hover{background:rgba(255,255,255,.03);}
   .pd-detail-invalid{opacity:.4;}
@@ -643,7 +647,7 @@ function firstDayOfMonthDoy(doy){
 }
 var DEFAULT_START_DOY = 0;
 
-var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, activeView:'geral', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', minDesemp:0, maxDesemp:120, turnoFilter:'', operadorFilter:'', maquinaFilter:'', ferramentaFilter:'', chartRange:'all', selectedMachine:null,
+var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, activeView:'geral', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', minDesemp:0, maxDesemp:120, turnoFilter:'', operadorFilter:'', maquinaFilter:'', ferramentaFilter:'', chartRange:'all', selectedMachine:null, turnosSortKey:null, turnosSortDir:'asc',
   turnoRanges:[ {name:'Comercial', start:'07:30', end:'17:28'}, {name:'Manhã', start:'06:15', end:'12:30'}, {name:'Tarde', start:'12:20', end:'21:15'}, {name:'Noite', start:'21:00', end:'06:30'} ] };
 function turnoCategory(raw){
   if(raw==='Dia') return 'Dia';
@@ -1501,19 +1505,43 @@ function renderTurnos(){
       gaugePerfId:'pd-turno-gauge-perf-'+idSafe, gaugeRefId:'pd-turno-gauge-ref-'+idSafe};
   });
 
+  // Cabeçalho ordenável, igual o padrão já usado na página Máquinas -- data-k identifica a coluna,
+  // .sorted marca visualmente qual está ativa (mesmo CSS de ▾ da tabela de Máquinas).
+  var TURNOS_TH = [
+    {k:'data', label:'Data'}, {k:'maquina', label:'Máquina'}, {k:'operador', label:'Operador'},
+    {k:'ferramenta', label:'Ferramenta'}, {k:'material', label:'Material'}, {k:'boas', label:'Boas'},
+    {k:'previstas', label:'Previstas'}, {k:'injetadas', label:'Injetadas'}, {k:'observacao', label:'Observação'},
+    {k:'desemp', label:'Desemp.'}, {k:'refugo', label:'Refugo'}
+  ];
+  var TURNOS_SORT_IDX = {data:0, maquina:1, operador:11, ferramenta:12, material:9, boas:4, previstas:5, injetadas:14, observacao:10, desemp:3, refugo:7};
+  var turnosTheadHtml = '<tr>'+TURNOS_TH.map(function(c){
+    return '<th data-k="'+c.k+'"'+(STATE.turnosSortKey===c.k?' class="sorted"':'')+'>'+c.label+'</th>';
+  }).join('')+'</tr>';
+
   document.getElementById('pd-turnos-sections').innerHTML = turnoStats.map(function(t){
-    var histRows = t.rows.slice().sort(function(a,b){ return b[0]-a[0]; }); // mais recente primeiro
+    var histRows = t.rows.slice().sort(function(a,b){
+      if(!STATE.turnosSortKey) return b[0]-a[0]; // padrão: mais recente primeiro, até clicar num cabeçalho
+      var idx = TURNOS_SORT_IDX[STATE.turnosSortKey];
+      var av = a[idx], bv = b[idx];
+      if(typeof av==='string' || typeof bv==='string'){
+        av = av||''; bv = bv||'';
+        return STATE.turnosSortDir==='asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+      }
+      av = (av===null||av===undefined) ? -Infinity : av;
+      bv = (bv===null||bv===undefined) ? -Infinity : bv;
+      return STATE.turnosSortDir==='asc' ? av-bv : bv-av;
+    });
     var histBody = histRows.map(function(r){
       var clamped = wasClamped(r);
       var obs = r[10]||'—';
       return '<tr'+(clamped?' class="pd-detail-invalid" title="Fora da faixa configurada — contado travado em '+STATE.maxDesemp+'%, não excluído"':'')+'>'+
-        '<td>'+doyToStr(r[0])+'</td><td>'+(r[11]||'—')+'</td><td>'+(r[12]||'—')+'</td><td>'+(r[9]||'—')+'</td>'+
+        '<td>'+doyToStr(r[0])+'</td><td>INJ '+r[1]+'</td><td>'+(r[11]||'—')+'</td><td>'+(r[12]||'—')+'</td><td>'+(r[9]||'—')+'</td>'+
         '<td>'+fmtInt(r[4]||0)+'</td><td>'+fmtInt(r[5]||0)+'</td>'+
         '<td>'+(r[14]!==null&&r[14]!==undefined?fmtInt(r[14]):'—')+'</td>'+
         '<td class="pd-detail-motivo" title="'+obs.replace(/"/g,'&quot;')+'">'+obs+'</td>'+
         '<td>'+(r[3]!==null?fmtPct(r[3],0):'—')+(clamped?' 🔒':'')+'</td>'+
         '<td>'+(r[7]!==null?fmtPct(r[7],1):'—')+'</td></tr>';
-    }).join('') || '<tr><td colspan="9" class="pd-empty">Sem apontamentos nesse turno, no período/filtros selecionados.</td></tr>';
+    }).join('') || '<tr><td colspan="11" class="pd-empty">Sem apontamentos nesse turno, no período/filtros selecionados.</td></tr>';
 
     return '<div class="pd-card pd-turno-card">'+
       '<div class="pd-turno-head">'+turnoSectionIcon(t.turno)+'<span>Turno '+turnoDisplayLabel(t.turno)+'</span></div>'+
@@ -1529,9 +1557,7 @@ function renderTurnos(){
         '</div>'+
       '</div>'+
       '<div class="pd-turno-hist-head"><div class="pd-card-title">Histórico por operador</div><span class="pd-turno-count-badge">'+t.rows.length+'</span></div>'+
-      '<div class="pd-detail-table-wrap"><table class="pd-detail-table"><thead><tr>'+
-        '<th>Data</th><th>Operador</th><th>Ferramenta</th><th>Material</th><th>Boas</th><th>Previstas</th><th>Injetadas</th><th>Observação</th><th>Desemp.</th><th>Refugo</th>'+
-      '</tr></thead><tbody>'+histBody+'</tbody></table></div>'+
+      '<div class="pd-detail-table-wrap"><table class="pd-detail-table"><thead>'+turnosTheadHtml+'</thead><tbody>'+histBody+'</tbody></table></div>'+
     '</div>';
   }).join('') || '<div class="pd-card"><div class="pd-empty">Sem apontamentos no período/filtros selecionados.</div></div>';
 
@@ -2128,6 +2154,12 @@ document.getElementById('pd-maquinas-table').addEventListener('click', function(
   var k = th.dataset.k;
   if(STATE.sortKey===k) STATE.sortDir = STATE.sortDir==='asc'?'desc':'asc'; else { STATE.sortKey=k; STATE.sortDir='asc'; }
   renderMaquinas();
+});
+document.getElementById('pd-turnos-sections').addEventListener('click', function(e){
+  var th = e.target.closest('th[data-k]'); if(!th) return;
+  var k = th.dataset.k;
+  if(STATE.turnosSortKey===k) STATE.turnosSortDir = STATE.turnosSortDir==='asc'?'desc':'asc'; else { STATE.turnosSortKey=k; STATE.turnosSortDir='asc'; }
+  renderTurnos();
 });
 
 function populateGlobalFilterOptions(){
