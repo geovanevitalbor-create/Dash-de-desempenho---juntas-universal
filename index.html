@@ -242,6 +242,12 @@
   .pd-modal-close{background:var(--card-2);border:1px solid var(--border);color:var(--text-dim);width:32px;height:32px;
     border-radius:9px;cursor:pointer;font-size:15px;flex-shrink:0;}
   .pd-modal-close:hover{color:var(--text);border-color:var(--blue);}
+  .pd-btn-mini{background:var(--card-2);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-ui);
+    font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;transition:border-color .15s,color .15s;}
+  .pd-btn-mini:hover{border-color:var(--brand-green);color:var(--brand-green);}
+  .pd-machine-status{border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;}
+  .pd-machine-status-active{background:rgba(94,234,212,.08);border:1px solid rgba(94,234,212,.35);color:var(--text);}
+  .pd-machine-status-idle{background:var(--card-2);border:1px solid var(--border);}
   .pd-modal-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
   .pd-modal-stat{background:var(--card-2);border-radius:10px;padding:10px 12px;}
   .pd-modal-stat-label{font-size:9.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
@@ -1263,6 +1269,37 @@ function emptyDaysUntilToday(fromDay, machine, bucket){
   return days;
 }
 
+/** Status de MÁQUINA INTEIRA (não um dia/turno específico) -- usa o mesmo STATUS_MAP e o mesmo
+ * backend de sempre, só que com o turno sentinela 'ALL' em vez de 'D'/'N'. Uma vez marcado,
+ * continua valendo pra QUALQUER dia futuro (mesmo os que ainda nem existem nos dados) até a
+ * máquina ter um apontamento real de novo -- aí o status "resolve" sozinho, sem precisar de ação
+ * manual. "Remover" reaproveita o mesmo upsert do backend, salvando status vazio na mesma chave.
+ */
+function buildMachineWideActive(){
+  var byMachine = {};
+  Object.keys(STATUS_MAP).forEach(function(k){
+    var parts = k.split('_');
+    if(parts.length!==3 || parts[2]!=='ALL') return;
+    var v = STATUS_MAP[k];
+    if(!v.status) return; // status vazio = removido manualmente
+    var machine = Number(parts[1]), startDay = Number(parts[0]);
+    if(!byMachine[machine]) byMachine[machine]=[];
+    byMachine[machine].push({startDay:startDay, status:v.status, obs:v.obs});
+  });
+  var active = {};
+  Object.keys(byMachine).forEach(function(mk){
+    var m = Number(mk);
+    var latest = byMachine[mk].sort(function(a,b){return b.startDay-a.startDay;})[0];
+    // Dia do primeiro apontamento real a partir do startDay (se já existir) -- é o dia em que a
+    // máquina "voltou". O status vale pra [startDay, esseDia) -- ANTES do retorno continua valendo
+    // certinho; só a partir do retorno em diante é que some. endDay=null = ainda em aberto (nunca voltou).
+    var returnDays = ROWS.filter(function(r){ return r[1]===m && r[0]>=latest.startDay; }).map(function(r){return r[0];});
+    var endDay = returnDays.length ? Math.min.apply(null, returnDays) : null;
+    active[m] = {startDay:latest.startDay, status:latest.status, obs:latest.obs, endDay:endDay};
+  });
+  return active;
+}
+
 function openStatusModal(day, machine, bucket){
   var existing = STATUS_MAP[statusKey(day, machine, bucket)];
   var bucketLabel = bucket==='N' ? 'Noturno (N)' : 'Diurno (D)';
@@ -1384,10 +1421,27 @@ function openMachineModal(m){
     return '<div class="pd-mini-row"><span class="name">'+f.name+' <span style="color:var(--text-faint)">('+f.n+')</span></span><span class="val" style="color:'+statusColor(f.avg,STATE.metaDesemp,false)+'">'+fmtPct(f.avg,0)+'</span></div>';
   }).join('') : '<div class="pd-empty">Sem ferramenta identificada.</div>';
 
+  var mActiveRaw = buildMachineWideActive()[m];
+  var mActive = (mActiveRaw && mActiveRaw.endDay===null) ? mActiveRaw : null;
+  var statusSectionHtml = mActive
+    ? '<div class="pd-machine-status pd-machine-status-active">🔧 <b>'+mActive.status+'</b> desde '+doyToStr(mActive.startDay)+(mActive.obs?(' — '+mActive.obs.replace(/</g,'&lt;')):'')+
+      ' <span style="color:var(--text-faint);font-weight:400;">(some sozinho no próximo apontamento real)</span> '+
+      '<button class="pd-btn-mini" id="pd-mstatus-remove">Remover</button></div>'
+    : '<div class="pd-machine-status pd-machine-status-idle">'+
+        '<button class="pd-btn-mini" id="pd-mstatus-mark">🔧 Marcar status da injetora (manutenção etc)</button>'+
+        '<div id="pd-mstatus-form" style="display:none;margin-top:10px;">'+
+          '<div class="pd-seg" id="pd-mstatus-cats">'+STATUS_CATEGORIES.map(function(c){return '<button type="button" data-cat="'+c.replace(/"/g,'&quot;')+'">'+c+'</button>';}).join('')+'</div>'+
+          '<textarea id="pd-mstatus-obs" placeholder="Observação (opcional)" style="width:100%;min-height:50px;margin-top:8px;background:var(--card-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-ui);font-size:12.5px;padding:8px;resize:vertical;box-sizing:border-box;"></textarea>'+
+          '<div style="margin-top:8px;display:flex;gap:10px;align-items:center;"><button class="pd-btn" id="pd-mstatus-save">Salvar</button><span id="pd-mstatus-msg" style="font-size:11.5px;color:var(--text-faint);"></span></div>'+
+        '</div>'+
+        '<div style="font-size:10.5px;color:var(--text-faint);margin-top:6px;">Vale pra máquina inteira (D e N), a partir de hoje em diante — continua marcado em dias novos até aparecer apontamento real, sem precisar repetir.</div>'+
+      '</div>';
+
   var html =
     '<div class="pd-modal-head"><div><div class="pd-modal-title">Injetora '+m+'</div>'+
     '<div class="pd-modal-sub">'+doyToStr(STATE.startDoy)+' a '+doyToStr(STATE.endDoy)+' · '+okRows.length+' apontamentos válidos</div></div>'+
     '<button class="pd-modal-close" id="pd-modal-close-btn">✕</button></div>'+
+    statusSectionHtml+
     '<div class="pd-modal-stats">'+
     '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Média</div><div class="pd-modal-stat-value" style="color:'+statusColor(media||0,STATE.metaDesemp,false)+'">'+fmtPct(media)+'</div></div>'+
     '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Eficiência</div><div class="pd-modal-stat-value" style="color:'+statusColor(efic||0,STATE.metaDesemp,false)+'">'+fmtPct(efic)+'</div></div>'+
@@ -1405,6 +1459,44 @@ function openMachineModal(m){
   document.getElementById('pd-modal-content').innerHTML = html;
   document.getElementById('pd-modal-overlay').classList.add('show');
   document.getElementById('pd-modal-close-btn').onclick = closeModal;
+
+  if(mActive){
+    document.getElementById('pd-mstatus-remove').onclick = function(){
+      saveMachineStatusRemote(mActive.startDay, m, 'ALL', '', '').then(function(){
+        STATUS_MAP[statusKey(mActive.startDay, m, 'ALL')] = {status:'', obs:''};
+        renderAll();
+        openMachineModal(m);
+      });
+    };
+  } else {
+    var selectedCat = null;
+    document.getElementById('pd-mstatus-mark').onclick = function(){
+      document.getElementById('pd-mstatus-form').style.display = 'block';
+      document.getElementById('pd-mstatus-mark').style.display = 'none';
+    };
+    document.getElementById('pd-mstatus-cats').addEventListener('click', function(e){
+      var b = e.target.closest('button[data-cat]'); if(!b) return;
+      selectedCat = b.dataset.cat;
+      document.querySelectorAll('#pd-mstatus-cats button').forEach(function(btn){ btn.classList.toggle('active', btn===b); });
+    });
+    document.getElementById('pd-mstatus-save').onclick = function(){
+      var msgEl = document.getElementById('pd-mstatus-msg');
+      if(!selectedCat){ msgEl.textContent='Escolhe uma categoria primeiro.'; msgEl.style.color='var(--red)'; return; }
+      var obs = document.getElementById('pd-mstatus-obs').value;
+      // Se hoje já tem apontamento real dessa máquina, começa amanhã -- assim o flag não "resolve"
+      // sozinho na hora, por causa de um apontamento que já existia antes de marcar.
+      var todayHasData = ROWS.some(function(r){ return r[1]===m && r[0]===LATEST_DOY; });
+      var startDay = todayHasData ? LATEST_DOY+1 : LATEST_DOY;
+      msgEl.textContent = 'Salvando...'; msgEl.style.color = 'var(--text-faint)';
+      saveMachineStatusRemote(startDay, m, 'ALL', selectedCat, obs).then(function(){
+        STATUS_MAP[statusKey(startDay, m, 'ALL')] = {status:selectedCat, obs:obs};
+        renderAll();
+        openMachineModal(m);
+      }).catch(function(err){
+        msgEl.textContent = 'Erro: '+err.message; msgEl.style.color = 'var(--red)';
+      });
+    };
+  }
 }
 
 function renderOverview(){
@@ -1515,6 +1607,7 @@ function renderOverview(){
     // Ordem crescente pelo número da injetora -- machines já vem assim (FLEET ordenado numericamente),
     // então usa direto, sem reordenar por desempenho como fazia antes.
     var byMachineSorted = machines;
+    var machineWideActive = buildMachineWideActive(); // uma vez só, não por célula
     byMachineSorted.forEach(function(m){
       tbody+='<tr><td class="mname" data-machine="'+m+'">INJETORA '+m+'</td>';
       for(var d=STATE.startDoy; d<=STATE.endDoy; d++){
@@ -1539,8 +1632,10 @@ function renderOverview(){
           tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="'+rowsMDrawD.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
         } else {
           var stD = STATUS_MAP[statusKey(d, m, 'D')];
-          if(stD){
-            tbody += '<td class="pd-heat-cell empty pd-heat-status" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="'+stD.status.replace(/"/g,'&quot;')+(stD.obs?(': '+stD.obs.replace(/"/g,'&quot;')):'')+' — clique pra editar">'+statusAbbrev(stD.status)+'</td>';
+          var wideD = machineWideActive[m];
+          var effD = stD || (wideD && d>=wideD.startDay && (wideD.endDay===null || d<wideD.endDay) ? wideD : null);
+          if(effD){
+            tbody += '<td class="pd-heat-cell empty pd-heat-status" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="'+effD.status.replace(/"/g,'&quot;')+(effD.obs?(': '+effD.obs.replace(/"/g,'&quot;')):'')+' — clique pra editar">'+statusAbbrev(effD.status)+'</td>';
           } else {
             tbody += '<td class="pd-heat-cell empty pd-heat-clickable" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="D" style="'+border+'" title="Sem apontamento — clique pra registrar o motivo (manutenção, parada, sem operador...)">·</td>';
           }
@@ -1553,8 +1648,10 @@ function renderOverview(){
           tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="'+rowsMDrawN.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
         } else {
           var stN = STATUS_MAP[statusKey(d, m, 'N')];
-          if(stN){
-            tbody += '<td class="pd-heat-cell empty pd-heat-status" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="'+stN.status.replace(/"/g,'&quot;')+(stN.obs?(': '+stN.obs.replace(/"/g,'&quot;')):'')+' — clique pra editar">'+statusAbbrev(stN.status)+'</td>';
+          var wideN = machineWideActive[m];
+          var effN = stN || (wideN && d>=wideN.startDay && (wideN.endDay===null || d<wideN.endDay) ? wideN : null);
+          if(effN){
+            tbody += '<td class="pd-heat-cell empty pd-heat-status" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="'+effN.status.replace(/"/g,'&quot;')+(effN.obs?(': '+effN.obs.replace(/"/g,'&quot;')):'')+' — clique pra editar">'+statusAbbrev(effN.status)+'</td>';
           } else {
             tbody += '<td class="pd-heat-cell empty pd-heat-clickable" data-m="'+m+'" data-d="'+d+'" data-day="'+d+'" data-bucket="N" style="'+border+'" title="Sem apontamento — clique pra registrar o motivo (manutenção, parada, sem operador...)">·</td>';
           }
@@ -2274,11 +2371,14 @@ function renderComparativo(){
   var rightWins = winners.filter(function(w){return w==='right';}).length;
 
   var rowsHtml = rows.map(function(r,i){
-    var winner = winners[i];
+    var winner = winners[i]; // 'left' = mês atual vence, 'right' = mês anterior vence (lógica interna)
+    // Exibição: mês anterior na coluna física da ESQUERDA, mês atual na da DIREITA -- leitura
+    // cronológica (passado → presente), pedido explícito do Thiago. Só inverto qual valor mostro
+    // em cada coluna física; a lógica de quem venceu continua a mesma de sempre.
     return '<div class="pd-boxscore-row">'+
-      '<div class="pd-boxscore-val pd-boxscore-val-left'+(winner==='left'?' pd-boxscore-winner':'')+'">'+(winner==='left'?trophySvg:'')+r.fmt(r.curVal)+'</div>'+
+      '<div class="pd-boxscore-val pd-boxscore-val-left'+(winner==='right'?' pd-boxscore-winner':'')+'">'+(winner==='right'?trophySvg:'')+r.fmt(r.prevVal)+'</div>'+
       '<div class="pd-boxscore-metric"><span class="pd-boxscore-round">Round '+(i+1)+'</span>'+r.label+'</div>'+
-      '<div class="pd-boxscore-val pd-boxscore-val-right'+(winner==='right'?' pd-boxscore-winner':'')+'">'+r.fmt(r.prevVal)+(winner==='right'?trophySvg:'')+'</div>'+
+      '<div class="pd-boxscore-val pd-boxscore-val-right'+(winner==='left'?' pd-boxscore-winner':'')+'">'+(winner==='left'?trophySvg:'')+r.fmt(r.curVal)+'</div>'+
     '</div>';
   }).join('');
 
@@ -2292,9 +2392,9 @@ function renderComparativo(){
 
   document.getElementById('pd-compare-cards').innerHTML =
     '<div class="pd-boxscore-header">'+
-      '<div class="pd-boxscore-fighter"><div class="pd-boxscore-fighter-tag">Mês atual</div><div class="pd-boxscore-fighter-name">'+curRange.label+'</div><div class="pd-boxscore-fighter-count">'+cur.n+' apontamentos</div></div>'+
-      '<div class="pd-boxscore-x-wrap"><div class="pd-boxscore-x">✕</div><div class="pd-boxscore-tally">'+leftWins+' - '+rightWins+'</div></div>'+
-      '<div class="pd-boxscore-fighter pd-boxscore-fighter-right"><div class="pd-boxscore-fighter-tag">Mês anterior</div><div class="pd-boxscore-fighter-name">'+prevRange.label+'</div><div class="pd-boxscore-fighter-count">'+prev.n+' apontamentos</div></div>'+
+      '<div class="pd-boxscore-fighter"><div class="pd-boxscore-fighter-tag">Mês anterior</div><div class="pd-boxscore-fighter-name">'+prevRange.label+'</div><div class="pd-boxscore-fighter-count">'+prev.n+' apontamentos</div></div>'+
+      '<div class="pd-boxscore-x-wrap"><div class="pd-boxscore-x">✕</div><div class="pd-boxscore-tally">'+rightWins+' - '+leftWins+'</div></div>'+
+      '<div class="pd-boxscore-fighter pd-boxscore-fighter-right"><div class="pd-boxscore-fighter-tag">Mês atual</div><div class="pd-boxscore-fighter-name">'+curRange.label+'</div><div class="pd-boxscore-fighter-count">'+cur.n+' apontamentos</div></div>'+
     '</div>'+
     rowsHtml + championHtml;
 
