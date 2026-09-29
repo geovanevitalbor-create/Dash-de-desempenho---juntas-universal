@@ -752,7 +752,7 @@
             <div class="pd-lz-value" id="pd-limpeza-custo-total" style="font-size:26px;">—</div>
             <div class="pd-lz-unit" id="pd-limpeza-custo-unit">no período selecionado</div>
           </div>
-          <div class="pd-lz-card" style="--lz-glow:rgba(236,72,153,.22);" id="pd-limpeza-mao-obra-card">
+          <div class="pd-lz-card" style="--lz-glow:rgba(236,72,153,.22);cursor:pointer;" id="pd-limpeza-mao-obra-card" title="Clique pra ver quais operadores estão entrando nessa conta">
             <div class="pd-lz-icon" style="background:rgba(236,72,153,.14);color:#ec4899;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></div>
             <div class="pd-lz-label">Custo de mão de obra</div>
             <div class="pd-lz-value" id="pd-limpeza-custo-mao-obra" style="font-size:26px;">—</div>
@@ -2815,17 +2815,78 @@ function custoMaoDeObraLinha(r, dayTotals, custoDiario){
   if(!totalDia) return null;
   return Math.round((custoDiario / totalDia) * (r[6]||0) * 100) / 100;
 }
+/** Resumo por operador do custo de mão de obra dentro do recorte atual (filtered) -- pra cada
+ * operador, quantos DIAS DISTINTOS dele aparecem no recorte, quantas peças, e o custo total
+ * atribuído a ele. É o que responde "quantas pessoas estão entrando nessa conta", de forma
+ * conferível (dá pra ver cada uma e a conta dela). */
+function buildOperatorCostSummary(filteredRows, dayTotals, custoDiario){
+  var byOperator = {};
+  filteredRows.forEach(function(r){
+    if(!r[3]) return;
+    if(!byOperator[r[3]]) byOperator[r[3]] = {dias:{}, pecas:0, custo:0, temCusto:false};
+    var e = byOperator[r[3]];
+    e.dias[r[0]] = true;
+    e.pecas += r[6]||0;
+    var c = custoMaoDeObraLinha(r, dayTotals, custoDiario);
+    if(c!==null){ e.custo += c; e.temCusto = true; }
+  });
+  var list = Object.keys(byOperator).map(function(op){
+    var e = byOperator[op];
+    return {name:op, dias:Object.keys(e.dias).length, pecas:e.pecas, custo:Math.round(e.custo*100)/100, temCusto:e.temCusto};
+  });
+  list.sort(function(a,b){ return b.custo-a.custo; });
+  return list;
+}
+/** Modal de verificação do custo de mão de obra -- mostra quantos operadores distintos estão sendo
+ * considerados no recorte atual, o custo diário-base usado (pros 3 parâmetros configurados), e a
+ * conta detalhada de cada um (dias, peças, custo), pra dar pra conferir a soma manualmente. */
+function openMaoDeObraModal(){
+  var filtered = filterLimpezaRows();
+  var custoDiario = (STATE.custoOperadorSalario * STATE.custoOperadorFator) / STATE.custoOperadorDiasUteis;
+  var dayTotals = buildOperatorDayTotals(LIMPEZA_ROWS);
+  var resumo = buildOperatorCostSummary(filtered, dayTotals, custoDiario);
+  var comCusto = resumo.filter(function(o){ return o.temCusto; });
+  var totalGeral = comCusto.reduce(function(a,o){ return a+o.custo; }, 0);
+  var totalDiasOperador = comCusto.reduce(function(a,o){ return a+o.dias; }, 0);
 
-function renderLimpeza(){
-  // Aplica os mesmos filtros globais de Turno/Operador/Ferramenta -- Máquina fica de fora de
-  // propósito, essa aba não tem coluna de injetora (é por operador+ferramenta).
-  var filtered = LIMPEZA_ROWS.filter(function(r){
+  var rowsHtml = resumo.length ? resumo.map(function(o){
+    return '<div class="pd-mini-row"><span class="name">'+o.name+' <span style="color:var(--text-faint)">('+o.dias+' dia'+(o.dias!==1?'s':'')+', '+fmtInt(o.pecas)+' pçs)</span></span>'+
+      '<span class="val" style="color:#ec4899">'+(o.temCusto ? fmtCurrency(o.custo) : '—')+'</span></div>';
+  }).join('') : '<div class="pd-empty">Nenhum operador identificado nesse recorte.</div>';
+
+  var html =
+    '<div class="pd-modal-head"><div><div class="pd-modal-title">Custo de mão de obra — verificação</div>'+
+    '<div class="pd-modal-sub">Recorte atual: '+doyToStr(STATE.startDoy)+' a '+doyToStr(STATE.endDoy)+' com os filtros de cima aplicados</div></div>'+
+    '<button class="pd-modal-close" id="pd-modal-close-btn">✕</button></div>'+
+    '<div class="pd-modal-stats">'+
+    '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Operadores considerados</div><div class="pd-modal-stat-value">'+comCusto.length+(resumo.length>comCusto.length ? '<span class="pd-stat-of"> ('+(resumo.length-comCusto.length)+' sem custo)</span>' : '')+'</div></div>'+
+    '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Custo diário-base usado</div><div class="pd-modal-stat-value" style="font-size:18px;">'+fmtCurrency(custoDiario)+'</div></div>'+
+    '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Total de dia-operador</div><div class="pd-modal-stat-value">'+totalDiasOperador+'</div></div>'+
+    '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Soma geral</div><div class="pd-modal-stat-value" style="color:#ec4899;">'+fmtCurrency(totalGeral)+'</div></div>'+
+    '</div>'+
+    '<div class="pd-page-sub" style="margin:2px 0 10px;">Custo diário-base = (salário × fator de encargos) ÷ dias úteis, configurado em Config. Cada operador aparece uma vez por dia distinto em que teve apontamento nesse recorte; "dia-operador" é a soma disso (ex: 3 pessoas × 4 dias cada = 12). O custo de cada um é o diário-base dividido pelo que ela limpou NAQUELE DIA (usando o dia inteiro dela, mesmo que os filtros de cima escondam parte).</div>'+
+    '<div class="pd-modal-section-title">Por operador (maior custo primeiro)</div>'+
+    '<div class="pd-daylist">'+rowsHtml+'</div>';
+
+  document.getElementById('pd-modal-content').innerHTML = html;
+  document.getElementById('pd-modal-overlay').classList.add('show');
+  document.getElementById('pd-modal-close-btn').onclick = closeModal;
+}
+
+/** Aplica os mesmos filtros globais de Turno/Operador/Ferramenta que a Limpeza usa (Máquina fica
+ * de fora de propósito -- essa aba não tem coluna de injetora, é por operador+ferramenta). Extraído
+ * numa função própria pra renderLimpeza() e o modal de custo de mão de obra usarem o mesmo recorte. */
+function filterLimpezaRows(){
+  return LIMPEZA_ROWS.filter(function(r){
     if(r[0]<STATE.startDoy || r[0]>STATE.endDoy) return false;
     if(STATE.turnoFilter.length && STATE.turnoFilter.indexOf(turnoCategory(r[1]))===-1) return false;
     if(STATE.operadorFilter.length && STATE.operadorFilter.indexOf(r[3])===-1) return false;
     if(STATE.ferramentaFilter.length && STATE.ferramentaFilter.indexOf(r[4])===-1) return false;
     return true;
   });
+}
+function renderLimpeza(){
+  var filtered = filterLimpezaRows();
 
   var totalLimpa = filtered.reduce(function(a,r){ return a+(r[6]||0); }, 0);
   var totalRefugo = filtered.reduce(function(a,r){ return a+(r[5]||0); }, 0);
@@ -2857,16 +2918,14 @@ function renderLimpeza(){
   // proporcional já calculada certa.
   var custoDiarioOperador = (STATE.custoOperadorSalario * STATE.custoOperadorFator) / STATE.custoOperadorDiasUteis;
   var dayTotals = buildOperatorDayTotals(LIMPEZA_ROWS);
-  var comMaoDeObra = 0, semOperadorParaCusto = 0, totalMaoDeObra = 0;
-  filtered.forEach(function(r){
-    var c = custoMaoDeObraLinha(r, dayTotals, custoDiarioOperador);
-    if(c===null) semOperadorParaCusto++; else { comMaoDeObra++; totalMaoDeObra += c; }
-  });
+  var resumoOperadores = buildOperatorCostSummary(filtered, dayTotals, custoDiarioOperador);
+  var operadoresComCusto = resumoOperadores.filter(function(o){ return o.temCusto; });
+  var totalMaoDeObra = operadoresComCusto.reduce(function(a,o){ return a+o.custo; }, 0);
   var maoObraEl = document.getElementById('pd-limpeza-custo-mao-obra');
   var maoObraUnitEl = document.getElementById('pd-limpeza-custo-mao-obra-unit');
-  animateCounter(maoObraEl, comMaoDeObra===0 ? null : totalMaoDeObra, fmtCurrency);
-  maoObraUnitEl.textContent = comMaoDeObra===0 ? 'sem operador identificado nesse período'
-    : (semOperadorParaCusto>0 ? (semOperadorParaCusto+' apontamento(s) sem operador, não entram na soma') : 'no período selecionado');
+  animateCounter(maoObraEl, operadoresComCusto.length===0 ? null : totalMaoDeObra, fmtCurrency);
+  maoObraUnitEl.textContent = operadoresComCusto.length===0 ? 'sem operador identificado nesse período'
+    : (operadoresComCusto.length+' operador'+(operadoresComCusto.length!==1?'es':'')+' no período · clique pra ver quem');
 
   var byDay = {};
   filtered.forEach(function(r){
@@ -3132,6 +3191,7 @@ document.getElementById('pd-limpeza-drill-chip').addEventListener('click', funct
   STATE.limpezaDrill = null;
   renderLimpeza();
 });
+document.getElementById('pd-limpeza-mao-obra-card').addEventListener('click', openMaoDeObraModal);
 document.getElementById('pd-limpeza-table').addEventListener('click', function(e){
   var th = e.target.closest('th[data-k]'); if(!th) return;
   var k = th.dataset.k;
