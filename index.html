@@ -239,6 +239,15 @@
   .pd-lz-seg button.active{background:linear-gradient(135deg, rgba(0,131,62,.25), rgba(0,131,62,.1));
     border-color:var(--brand-green);color:var(--brand-green);}
   .pd-lz-seg button:hover:not(.active){border-color:var(--text-faint);}
+  .pd-lz-card{cursor:pointer;transition:border-color .2s,transform .2s;}
+  .pd-lz-card:hover{border-color:var(--brand-green);transform:translateY(-2px);}
+  .pd-lz-rank-row{cursor:pointer;border-radius:8px;transition:background .15s;}
+  .pd-lz-rank-row:hover{background:rgba(255,255,255,.03);}
+  .pd-lz-drill-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(0,131,62,.12);
+    border:1px solid rgba(0,131,62,.4);color:var(--brand-green);padding:7px 12px;border-radius:8px;
+    font-size:12px;font-weight:600;}
+  .pd-lz-drill-chip button{background:none;border:none;color:var(--brand-green);cursor:pointer;
+    font-size:14px;line-height:1;padding:0;display:flex;}
   .pd-lz-rank-row{display:flex;align-items:center;gap:14px;padding:12px 2px;border-bottom:1px solid var(--card-2);
     animation:pdLzFadeUp .35s ease both;}
   .pd-lz-rank-row:last-child{border-bottom:none;}
@@ -752,7 +761,8 @@
             </button>
           </div>
           <div id="pd-limpeza-detail-wrap">
-            <div class="pd-page-sub" style="margin:14px 0 10px;">Clique num cabeçalho pra ordenar.</div>
+            <div id="pd-limpeza-drill-chip" style="display:none;margin:14px 0 0;"></div>
+            <div class="pd-page-sub" style="margin:14px 0 10px;">Clique num cabeçalho pra ordenar. Clique num item do ranking acima pra ver só os apontamentos dele aqui.</div>
             <div style="overflow-x:auto;">
               <table class="pd-table" id="pd-limpeza-table">
                 <thead><tr>
@@ -887,7 +897,7 @@ function firstDayOfMonthDoy(doy){
 }
 var DEFAULT_START_DOY = 0;
 
-var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, activeView:'geral', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', limpezaView:'ferramenta', minDesemp:0, maxDesemp:120, turnoFilter:[], operadorFilter:[], maquinaFilter:[], ferramentaFilter:[], chartRange:'all', selectedMachine:null, turnosSortKey:null, turnosSortDir:'asc', showHelpText:true,
+var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, activeView:'geral', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', limpezaView:'ferramenta', limpezaDrill:null, minDesemp:0, maxDesemp:120, turnoFilter:[], operadorFilter:[], maquinaFilter:[], ferramentaFilter:[], chartRange:'all', selectedMachine:null, turnosSortKey:null, turnosSortDir:'asc', showHelpText:true,
   turnoRanges:[ {name:'Comercial', start:'07:30', end:'17:28'}, {name:'Manhã', start:'06:15', end:'12:30'}, {name:'Tarde', start:'12:20', end:'21:15'}, {name:'Noite', start:'21:00', end:'06:30'} ] };
 function turnoCategory(raw){
   if(raw==='Dia') return 'Dia';
@@ -1227,6 +1237,18 @@ function renderLineChart(containerId, dayKeys, values, opts){
 function uniqueVals(rows, idx){
   var seen={}, out=[];
   rows.forEach(function(r){ var v=r[idx]; if(v && !seen[v]){ seen[v]=true; out.push(v); } });
+  out.sort();
+  return out;
+}
+/** Igual uniqueVals, mas junta valores de VÁRIAS listas de linhas de uma vez, cada uma com seu
+ * próprio índice de coluna -- útil quando o mesmo "tipo" de dado (operador, ferramenta) mora em
+ * colunas diferentes em conjuntos de dados diferentes (produção x limpeza). */
+function uniqueValsAcross(pairs){
+  var seen={}, out=[];
+  pairs.forEach(function(pair){
+    var rows=pair[0], idx=pair[1];
+    rows.forEach(function(r){ var v=r[idx]; if(v && !seen[v]){ seen[v]=true; out.push(v); } });
+  });
   out.sort();
   return out;
 }
@@ -2685,15 +2707,15 @@ function renderTechLineChart(containerId, dayKeys, values, opts){
 
 /** Ranking visual da Limpeza -- linhas com medalha nos 3 primeiros e barra em gradiente animada
  * (cresce de 0% até o valor real). Visual dedicado, não usa buildBreakdownTable de propósito. */
-function renderLimpezaBreakdown(list, limit){
+function renderLimpezaBreakdown(list, limit, kind){
   list = list.slice(0, limit||10);
   if(!list.length) return '<div class="pd-empty">Sem refugo registrado nesse recorte.</div>';
   var max = list[0].vol || 1;
   return list.map(function(item,i){
     var badgeCls = i===0?'gold':(i===1?'silver':(i===2?'bronze':''));
-    return '<div class="pd-lz-rank-row" style="animation-delay:'+(i*0.04)+'s;">'+
+    return '<div class="pd-lz-rank-row" data-kind="'+kind+'" data-value="'+item.name.replace(/"/g,'&quot;')+'" style="animation-delay:'+(i*0.04)+'s;" title="Clique pra ver só os apontamentos de '+item.name.replace(/"/g,'&quot;')+' no histórico detalhado">'+
       '<div class="pd-lz-rank-badge '+badgeCls+'">'+(i+1)+'</div>'+
-      '<div class="pd-lz-rank-name" title="'+item.name.replace(/"/g,'&quot;')+'">'+item.name+'</div>'+
+      '<div class="pd-lz-rank-name">'+item.name+'</div>'+
       '<div class="pd-lz-rank-bar-track"><div class="pd-lz-rank-bar-fill" data-target="'+(item.vol/max*100)+'"></div></div>'+
       '<div class="pd-lz-rank-meta">'+item.count+'x · '+fmtInt(item.vol)+' pçs</div>'+
     '</div>';
@@ -2741,7 +2763,7 @@ function renderLimpeza(){
   document.querySelectorAll('#pd-limpeza-seg button').forEach(function(b){ b.classList.toggle('active', b.dataset.k===STATE.limpezaView); });
   var kind = STATE.limpezaView || 'ferramenta';
   var list = limpezaBreakdownByIdx(filtered, LIMPEZA_KIND_IDX[kind]);
-  document.getElementById('pd-limpeza-breakdown').innerHTML = renderLimpezaBreakdown(list, 10);
+  document.getElementById('pd-limpeza-breakdown').innerHTML = renderLimpezaBreakdown(list, 10, kind);
   // As barras nascem em width:0% (definido no CSS/HTML) e só ganham a largura real depois de um
   // frame -- é o que faz a transição CSS de fato animar em vez de já aparecer preenchida.
   requestAnimationFrame(function(){
@@ -2750,10 +2772,30 @@ function renderLimpeza(){
     });
   });
 
-  document.getElementById('pd-limpeza-detail-count').textContent = filtered.length+' apontamento(s) de limpeza no recorte atual';
+  // Drill-down: clicar numa linha do ranking acima filtra SÓ a tabela detalhada pra aquele valor
+  // específico (ferramenta/motivo/operador), sem mudar os stats/gráficos/ranking em si, que
+  // continuam mostrando o recorte inteiro. É a parte "rastreável" -- ver exatamente quais
+  // apontamentos formam aquele número.
+  var drill = STATE.limpezaDrill;
+  var tableRows = filtered;
+  if(drill){
+    var drillIdx = LIMPEZA_KIND_IDX[drill.kind];
+    tableRows = filtered.filter(function(r){ return r[drillIdx]===drill.value; });
+  }
+  var chipEl = document.getElementById('pd-limpeza-drill-chip');
+  if(drill){
+    chipEl.style.display = 'block';
+    chipEl.innerHTML = '<div class="pd-lz-drill-chip">Mostrando só: <b>'+drill.value.replace(/</g,'&lt;')+'</b> ('+LIMPEZA_KIND_LABEL[drill.kind]+')'+
+      '<button type="button" id="pd-limpeza-drill-clear" title="Limpar filtro de detalhe">✕</button></div>';
+  } else {
+    chipEl.style.display = 'none';
+    chipEl.innerHTML = '';
+  }
+
+  document.getElementById('pd-limpeza-detail-count').textContent = tableRows.length+' apontamento(s)'+(drill?' (filtrado por '+drill.value+')':' de limpeza no recorte atual');
 
   // Tabela detalhada, ordenável -- clique no cabeçalho alterna asc/desc.
-  var sorted = filtered.slice();
+  var sorted = tableRows.slice();
   var sk = LIMPEZA_SORT.key, sd = LIMPEZA_SORT.dir;
   var keyIdx = {doy:0, turno:1, material:2, operador:3, ferramenta:4, refugos:5, quantidadeLimpa:6, refugoPct:7, motivo:8};
   sorted.sort(function(a,b){
@@ -2925,11 +2967,41 @@ document.getElementById('pd-limpeza-seg').addEventListener('click', function(e){
   STATE.limpezaView = b.dataset.k;
   renderLimpeza();
 });
+/** Abre (se ainda não estiver aberta) a tabela detalhada da Limpeza e rola até ela -- reaproveitado
+ * tanto pelo botão "Ver linha a linha" quanto por clicar num card do topo ou numa linha do ranking
+ * (a parte "rastreável": clicar num número leva direto pros dados que o formam). */
+function openLimpezaDetailTable(){
+  var wrap = document.getElementById('pd-limpeza-detail-wrap');
+  var toggleBtn = document.getElementById('pd-limpeza-detail-toggle');
+  if(!wrap.classList.contains('open')){
+    wrap.classList.add('open');
+    toggleBtn.classList.add('open');
+    toggleBtn.childNodes[0].textContent = 'Ocultar linha a linha ';
+  }
+  wrap.scrollIntoView({behavior:'smooth', block:'start'});
+}
 document.getElementById('pd-limpeza-detail-toggle').addEventListener('click', function(){
   var wrap = document.getElementById('pd-limpeza-detail-wrap');
   var isOpen = wrap.classList.toggle('open');
   this.classList.toggle('open', isOpen);
   this.childNodes[0].textContent = isOpen ? 'Ocultar linha a linha ' : 'Ver linha a linha ';
+});
+document.querySelector('.pd-lz-hero').addEventListener('click', function(e){
+  if(!e.target.closest('.pd-lz-card')) return;
+  STATE.limpezaDrill = null; // clicar num card do topo mostra TUDO no detalhe, sem recorte de ranking
+  renderLimpeza();
+  openLimpezaDetailTable();
+});
+document.getElementById('pd-limpeza-breakdown').addEventListener('click', function(e){
+  var row = e.target.closest('.pd-lz-rank-row'); if(!row) return;
+  STATE.limpezaDrill = {kind:row.dataset.kind, value:row.dataset.value};
+  renderLimpeza();
+  openLimpezaDetailTable();
+});
+document.getElementById('pd-limpeza-drill-chip').addEventListener('click', function(e){
+  if(!e.target.closest('#pd-limpeza-drill-clear')) return;
+  STATE.limpezaDrill = null;
+  renderLimpeza();
 });
 document.getElementById('pd-limpeza-table').addEventListener('click', function(e){
   var th = e.target.closest('th[data-k]'); if(!th) return;
@@ -2997,8 +3069,12 @@ function updateMultiFilterBtn(key){
 
 function populateGlobalFilterOptions(){
   var dateRows = ROWS.filter(function(r){ return r[0]>=STATE.startDoy && r[0]<=STATE.endDoy; });
-  var operadores = uniqueVals(dateRows,11);
-  var ferramentas = uniqueVals(dateRows,12);
+  var lzDateRows = LIMPEZA_ROWS.filter(function(r){ return r[0]>=STATE.startDoy && r[0]<=STATE.endDoy; });
+  // Une produção + limpeza -- um operador ou ferramenta que só aparece na limpeza (ex: quem faz
+  // acabamento mas não opera injetora) precisa aparecer na lista, senão fica invisível pra filtrar
+  // e a página de Limpeza mostra "sem dado" ao selecionar alguém que nem dava pra escolher direito.
+  var operadores = uniqueValsAcross([[dateRows,11],[lzDateRows,3]]);
+  var ferramentas = uniqueValsAcross([[dateRows,12],[lzDateRows,4]]);
 
   // Tira da seleção qualquer valor que não existe mais nesse recorte de datas (evita filtro "fantasma").
   STATE.operadorFilter = STATE.operadorFilter.filter(function(o){ return operadores.indexOf(o)!==-1; });
