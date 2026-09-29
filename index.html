@@ -204,6 +204,63 @@
   @media (max-width:900px){.pd-charts-row{grid-template-columns:1fr;}}
   .pd-chart-card svg{width:100%;height:auto;display:block;margin-top:6px;cursor:pointer;}
   .pd-chart-note{font-size:10.5px;color:var(--text-faint);margin-top:4px;}
+
+  /* ===== Limpeza de Peça — visual dedicado, mais tecnológico ===== */
+  @keyframes pdLzFadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes pdLzPulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+  @keyframes pdLzDraw{to{stroke-dashoffset:0;}}
+  .pd-lz-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .pd-lz-card{position:relative;background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);
+    border:1px solid var(--border);border-radius:16px;padding:20px;overflow:hidden;
+    animation:pdLzFadeUp .45s ease both;}
+  .pd-lz-card::before{content:'';position:absolute;top:-45%;right:-25%;width:150px;height:150px;
+    background:radial-gradient(circle, var(--lz-glow, rgba(0,131,62,.18)) 0%, transparent 70%);pointer-events:none;}
+  .pd-lz-card:nth-child(2){animation-delay:.06s;}
+  .pd-lz-card:nth-child(3){animation-delay:.12s;}
+  .pd-lz-card:nth-child(4){animation-delay:.18s;}
+  .pd-lz-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,131,62,.14);color:var(--brand-green);margin-bottom:14px;position:relative;z-index:1;}
+  .pd-lz-icon svg{width:19px;height:19px;}
+  .pd-lz-icon.red{background:rgba(220,38,38,.14);color:var(--red);}
+  .pd-lz-icon.amber{background:rgba(251,191,36,.14);color:#fbbf24;}
+  .pd-lz-label{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:6px;position:relative;z-index:1;}
+  .pd-lz-value{font-family:var(--font-num);font-size:30px;font-weight:800;color:var(--text);line-height:1;
+    text-shadow:0 0 24px var(--lz-glow, rgba(0,131,62,.25));position:relative;z-index:1;}
+  .pd-lz-unit{font-size:11px;color:var(--text-faint);margin-top:6px;position:relative;z-index:1;}
+  .pd-lz-chart-card{position:relative;background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);
+    border:1px solid var(--border);border-radius:16px;padding:20px;animation:pdLzFadeUp .5s ease both;}
+  .pd-lz-chart-title{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--text-dim);
+    text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;}
+  .pd-lz-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;animation:pdLzPulse 2s ease-in-out infinite;}
+  .pd-lz-seg{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .pd-lz-seg button{background:var(--card-2);border:1px solid var(--border);color:var(--text-dim);
+    padding:8px 16px;border-radius:9px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:var(--font-ui);
+    transition:all .2s ease;}
+  .pd-lz-seg button.active{background:linear-gradient(135deg, rgba(0,131,62,.25), rgba(0,131,62,.1));
+    border-color:var(--brand-green);color:var(--brand-green);}
+  .pd-lz-seg button:hover:not(.active){border-color:var(--text-faint);}
+  .pd-lz-rank-row{display:flex;align-items:center;gap:14px;padding:12px 2px;border-bottom:1px solid var(--card-2);
+    animation:pdLzFadeUp .35s ease both;}
+  .pd-lz-rank-row:last-child{border-bottom:none;}
+  .pd-lz-rank-badge{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-num);font-size:12px;font-weight:800;flex-shrink:0;background:var(--card-2);color:var(--text-faint);}
+  .pd-lz-rank-badge.gold{background:linear-gradient(135deg,#fde68a,#f59e0b);color:#1a1400;}
+  .pd-lz-rank-badge.silver{background:linear-gradient(135deg,#e2e8f0,#94a3b8);color:#1a1400;}
+  .pd-lz-rank-badge.bronze{background:linear-gradient(135deg,#e2a374,#b45309);color:#1a1400;}
+  .pd-lz-rank-name{flex:0 0 175px;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pd-lz-rank-bar-track{flex:1;height:8px;background:var(--card-2);border-radius:5px;overflow:hidden;min-width:60px;}
+  .pd-lz-rank-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg, var(--red), #f97316);
+    width:0%;transition:width 1s cubic-bezier(.22,1,.36,1);box-shadow:0 0 10px rgba(220,38,38,.45);}
+  .pd-lz-rank-meta{flex:0 0 auto;font-family:var(--font-num);font-size:12px;color:var(--text-faint);white-space:nowrap;min-width:96px;text-align:right;}
+  @media (max-width:900px){.pd-lz-hero{grid-template-columns:1fr 1fr;} .pd-lz-rank-name{flex-basis:110px;}}
+  .pd-lz-toggle-detail{background:var(--card-2);border:1px solid var(--border);color:var(--text-dim);
+    padding:9px 16px;border-radius:9px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:var(--font-ui);
+    display:flex;align-items:center;gap:7px;}
+  .pd-lz-toggle-detail:hover{border-color:var(--brand-green);color:var(--brand-green);}
+  .pd-lz-toggle-detail svg{width:13px;height:13px;transition:transform .25s ease;}
+  .pd-lz-toggle-detail.open svg{transform:rotate(180deg);}
+  #pd-limpeza-detail-wrap{display:none;margin-top:16px;}
+  #pd-limpeza-detail-wrap.open{display:block;animation:pdLzFadeUp .3s ease both;}
   .pd-chart-note.pd-chart-note-warn{color:#c7a9ff;}
   .pd-chart-dot{cursor:pointer;}
 
@@ -637,66 +694,81 @@
 
       <!-- LIMPEZA -->
       <div class="pd-view" id="view-limpeza">
-        <div class="pd-top-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-          <div class="pd-card">
-            <div class="pd-card-title" style="margin-bottom:10px;">Total limpo</div>
-            <div class="pd-stat-value" id="pd-limpeza-total-limpa" style="font-size:26px;">—</div>
-            <div class="pd-stat-unit">peças, no período selecionado</div>
+        <div class="pd-lz-hero">
+          <div class="pd-lz-card" style="--lz-glow:rgba(0,131,62,.22);">
+            <div class="pd-lz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c-2.8 3.7-5.5 7.3-5.5 10.8a5.5 5.5 0 0 0 11 0c0-3.5-2.7-7.1-5.5-10.8z"/></svg></div>
+            <div class="pd-lz-label">Total limpo</div>
+            <div class="pd-lz-value" id="pd-limpeza-total-limpa">0</div>
+            <div class="pd-lz-unit">peças, no período selecionado</div>
           </div>
-          <div class="pd-card">
-            <div class="pd-card-title" style="margin-bottom:10px;">Refugo na limpeza</div>
-            <div class="pd-stat-value" id="pd-limpeza-total-refugo" style="font-size:26px;color:var(--red);">—</div>
-            <div class="pd-stat-unit">peças refugadas nesta etapa</div>
+          <div class="pd-lz-card" style="--lz-glow:rgba(220,38,38,.22);">
+            <div class="pd-lz-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.5h15"/><path d="M6.5 7.5l1.1 12.4a1.5 1.5 0 0 0 1.5 1.4h5.8a1.5 1.5 0 0 0 1.5-1.4l1.1-12.4"/></svg></div>
+            <div class="pd-lz-label">Refugo na limpeza</div>
+            <div class="pd-lz-value" id="pd-limpeza-total-refugo">0</div>
+            <div class="pd-lz-unit">peças refugadas nesta etapa</div>
           </div>
-          <div class="pd-card">
-            <div class="pd-card-title" style="margin-bottom:10px;">% de refugo na limpeza</div>
-            <div class="pd-stat-value" id="pd-limpeza-pct-refugo" style="font-size:26px;">—</div>
-            <div class="pd-stat-unit">refugos ÷ (refugos + limpas)</div>
+          <div class="pd-lz-card" style="--lz-glow:rgba(251,191,36,.22);">
+            <div class="pd-lz-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M12 7v5l3.5 2"/></svg></div>
+            <div class="pd-lz-label">% de refugo</div>
+            <div class="pd-lz-value" id="pd-limpeza-pct-refugo">0%</div>
+            <div class="pd-lz-unit">refugos ÷ (refugos + limpas)</div>
           </div>
-          <div class="pd-card">
-            <div class="pd-card-title" style="margin-bottom:10px;">Peças distintas</div>
-            <div class="pd-stat-value" id="pd-limpeza-pecas-distintas" style="font-size:26px;">—</div>
-            <div class="pd-stat-unit">ferramentas passaram pela limpeza</div>
+          <div class="pd-lz-card" style="--lz-glow:rgba(77,171,247,.22);">
+            <div class="pd-lz-icon" style="background:rgba(77,171,247,.14);color:var(--blue);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/></svg></div>
+            <div class="pd-lz-label">Peças distintas</div>
+            <div class="pd-lz-value" id="pd-limpeza-pecas-distintas">0</div>
+            <div class="pd-lz-unit">ferramentas passaram pela limpeza</div>
           </div>
         </div>
         <div class="pd-top-row" style="grid-template-columns:1fr 1fr;">
-          <div class="pd-card pd-chart-card">
-            <div class="pd-card-title">Peças limpas por dia</div>
+          <div class="pd-lz-chart-card">
+            <div class="pd-lz-chart-title"><span class="pd-lz-dot" style="background:var(--brand-green);box-shadow:0 0 8px var(--brand-green);"></span>Peças limpas por dia</div>
             <div id="pd-limpeza-chart-qtd"></div>
           </div>
-          <div class="pd-card pd-chart-card">
-            <div class="pd-card-title">% de refugo na limpeza por dia</div>
+          <div class="pd-lz-chart-card">
+            <div class="pd-lz-chart-title"><span class="pd-lz-dot" style="background:var(--red);box-shadow:0 0 8px var(--red);"></span>% de refugo na limpeza por dia</div>
             <div id="pd-limpeza-chart-refugo"></div>
           </div>
         </div>
         <div class="pd-card">
           <div class="pd-card-title" style="margin-bottom:10px;">Quebra por</div>
-          <div class="pd-seg" id="pd-limpeza-seg">
+          <div class="pd-lz-seg" id="pd-limpeza-seg">
             <button data-k="ferramenta" class="active">Peça / Ferramenta</button>
             <button data-k="motivo">Motivo do refugo</button>
             <button data-k="operador">Operador</button>
           </div>
-          <div class="pd-page-sub" style="margin-bottom:12px;">Ordenado por volume de refugo. Barra = % do refugo total de limpeza no período.</div>
+          <div class="pd-page-sub" style="margin-bottom:14px;">Ordenado por volume de refugo. Barra = % do refugo total de limpeza no período.</div>
           <div id="pd-limpeza-breakdown"></div>
         </div>
         <div class="pd-card">
-          <div class="pd-card-title" style="margin-bottom:10px;">Histórico detalhado</div>
-          <div class="pd-page-sub" style="margin-bottom:12px;">Clique num cabeçalho pra ordenar.</div>
-          <div style="overflow-x:auto;">
-            <table class="pd-table" id="pd-limpeza-table">
-              <thead><tr>
-                <th data-k="doy" style="cursor:pointer;">Data</th>
-                <th data-k="turno" style="cursor:pointer;">Turno</th>
-                <th data-k="material" style="cursor:pointer;">Material</th>
-                <th data-k="operador" style="cursor:pointer;">Operador</th>
-                <th data-k="ferramenta" style="cursor:pointer;">Ferramenta</th>
-                <th data-k="quantidadeLimpa" style="cursor:pointer;">Qtd. limpa</th>
-                <th data-k="refugos" style="cursor:pointer;">Refugos</th>
-                <th data-k="refugoPct" style="cursor:pointer;">% refugo</th>
-                <th data-k="motivo" style="cursor:pointer;">Motivo</th>
-              </tr></thead>
-              <tbody id="pd-limpeza-table-body"></tbody>
-            </table>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div>
+              <div class="pd-card-title" style="margin-bottom:4px;">Histórico detalhado</div>
+              <div class="pd-page-sub" style="margin-bottom:0;" id="pd-limpeza-detail-count">—</div>
+            </div>
+            <button type="button" class="pd-lz-toggle-detail" id="pd-limpeza-detail-toggle">
+              Ver linha a linha
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+          <div id="pd-limpeza-detail-wrap">
+            <div class="pd-page-sub" style="margin:14px 0 10px;">Clique num cabeçalho pra ordenar.</div>
+            <div style="overflow-x:auto;">
+              <table class="pd-table" id="pd-limpeza-table">
+                <thead><tr>
+                  <th data-k="doy" style="cursor:pointer;">Data</th>
+                  <th data-k="turno" style="cursor:pointer;">Turno</th>
+                  <th data-k="material" style="cursor:pointer;">Material</th>
+                  <th data-k="operador" style="cursor:pointer;">Operador</th>
+                  <th data-k="ferramenta" style="cursor:pointer;">Ferramenta</th>
+                  <th data-k="quantidadeLimpa" style="cursor:pointer;">Qtd. limpa</th>
+                  <th data-k="refugos" style="cursor:pointer;">Refugos</th>
+                  <th data-k="refugoPct" style="cursor:pointer;">% refugo</th>
+                  <th data-k="motivo" style="cursor:pointer;">Motivo</th>
+                </tr></thead>
+                <tbody id="pd-limpeza-table-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -2552,18 +2624,103 @@ var LIMPEZA_KIND_IDX = {ferramenta:4, motivo:8, operador:3};
 var LIMPEZA_KIND_LABEL = {ferramenta:'Peça / Ferramenta', motivo:'Motivo', operador:'Operador'};
 var LIMPEZA_SORT = {key:'doy', dir:'desc'};
 
+/** Anima um número subindo até o valor final (ease-out cúbico), em vez de só aparecer estático --
+ * dá a sensação de dado "vivo" sendo calculado na hora. `fmt` formata cada frame igual ao valor
+ * final (milhar, %, etc). Cancela uma animação anterior no mesmo elemento se rodar de novo antes
+ * dela terminar (troca de filtro rápida não deve empilhar animações concorrentes). */
+function animateCounter(el, toValue, fmt){
+  if(el._lzAnimFrame) cancelAnimationFrame(el._lzAnimFrame);
+  var duration = 700, start = null;
+  function step(ts){
+    if(!start) start = ts;
+    var progress = Math.min((ts-start)/duration, 1);
+    var eased = 1-Math.pow(1-progress, 3);
+    el.textContent = fmt(toValue*eased);
+    if(progress<1) el._lzAnimFrame = requestAnimationFrame(step);
+    else { el.textContent = fmt(toValue); el._lzAnimFrame = null; }
+  }
+  el._lzAnimFrame = requestAnimationFrame(step);
+}
+
+/** Gráfico de linha com preenchimento em gradiente, brilho (glow) na linha, e animação de
+ * "desenhar" o traço -- visual dedicado só da página de Limpeza. Não usa renderLineChart de
+ * propósito, pra não arriscar mudar o visual de nenhum gráfico das outras páginas. */
+function renderTechLineChart(containerId, dayKeys, values, opts){
+  var width=880, height=230;
+  var pad={top:14,right:10,bottom:26,left:42};
+  var pw=width-pad.left-pad.right, ph=height-pad.top-pad.bottom;
+  var n=values.length;
+  var x=function(i){ return pad.left+(n===1?0:(i/(n-1))*pw); };
+  var y=function(v){ return pad.top+ph-((v-opts.min)/(opts.max-opts.min||1))*ph; };
+  var grid='', steps=4;
+  for(var i=0;i<=steps;i++){
+    var v=opts.min+(opts.max-opts.min)*i/steps, yy=y(v);
+    grid += '<line x1="'+pad.left+'" y1="'+yy.toFixed(1)+'" x2="'+(width-pad.right)+'" y2="'+yy.toFixed(1)+'" stroke="rgba(255,255,255,.05)" stroke-width="1"/>'+
+      '<text x="'+(pad.left-7)+'" y="'+(yy+3).toFixed(1)+'" text-anchor="end" font-size="10" font-family="IBM Plex Mono, monospace" fill="#5a6478">'+Math.round(v)+opts.suffix+'</text>';
+  }
+  var linePts = values.map(function(v,i){ return x(i).toFixed(1)+','+y(v).toFixed(1); }).join(' ');
+  var areaPts = linePts+' '+x(n-1).toFixed(1)+','+(pad.top+ph)+' '+x(0).toFixed(1)+','+(pad.top+ph);
+  var uid = Math.random().toString(36).slice(2,9);
+  var dots = values.map(function(v,i){ return '<circle cx="'+x(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="3" fill="'+opts.color+'" stroke="#0a0f18" stroke-width="1.5"/>'; }).join('');
+  var everyN = n>12 ? Math.ceil(n/7) : 1;
+  var xLabels = dayKeys.map(function(d,i){
+    if(i!==0 && i!==n-1 && i%everyN!==0) return '';
+    return '<text x="'+x(i).toFixed(1)+'" y="'+(height-6)+'" text-anchor="middle" font-size="10" font-family="IBM Plex Mono, monospace" fill="#5a6478">'+doyToStr(d).slice(0,5)+'</text>';
+  }).join('');
+  var pathLen = 10;
+  for(var i2=1;i2<n;i2++){ var dx=x(i2)-x(i2-1), dy=y(values[i2])-y(values[i2-1]); pathLen += Math.sqrt(dx*dx+dy*dy); }
+  var svg =
+    '<svg viewBox="0 0 '+width+' '+height+'" style="width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet">'+
+    '<defs><linearGradient id="g'+uid+'" x1="0" y1="0" x2="0" y2="1">'+
+      '<stop offset="0%" stop-color="'+opts.color+'" stop-opacity="0.3"/><stop offset="100%" stop-color="'+opts.color+'" stop-opacity="0"/>'+
+    '</linearGradient>'+
+    '<filter id="f'+uid+'" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'+
+    '</defs>'+grid+
+    '<polygon points="'+areaPts+'" fill="url(#g'+uid+')"/>'+
+    '<polyline points="'+linePts+'" fill="none" stroke="'+opts.color+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" filter="url(#f'+uid+')" '+
+      'style="stroke-dasharray:'+pathLen.toFixed(0)+';stroke-dashoffset:'+pathLen.toFixed(0)+';animation:pdLzDraw 1.1s cubic-bezier(.22,1,.36,1) forwards;"/>'+
+    dots+xLabels+'</svg>';
+  document.getElementById(containerId).innerHTML = svg;
+}
+
+/** Ranking visual da Limpeza -- linhas com medalha nos 3 primeiros e barra em gradiente animada
+ * (cresce de 0% até o valor real). Visual dedicado, não usa buildBreakdownTable de propósito. */
+function renderLimpezaBreakdown(list, limit){
+  list = list.slice(0, limit||10);
+  if(!list.length) return '<div class="pd-empty">Sem refugo registrado nesse recorte.</div>';
+  var max = list[0].vol || 1;
+  return list.map(function(item,i){
+    var badgeCls = i===0?'gold':(i===1?'silver':(i===2?'bronze':''));
+    return '<div class="pd-lz-rank-row" style="animation-delay:'+(i*0.04)+'s;">'+
+      '<div class="pd-lz-rank-badge '+badgeCls+'">'+(i+1)+'</div>'+
+      '<div class="pd-lz-rank-name" title="'+item.name.replace(/"/g,'&quot;')+'">'+item.name+'</div>'+
+      '<div class="pd-lz-rank-bar-track"><div class="pd-lz-rank-bar-fill" data-target="'+(item.vol/max*100)+'"></div></div>'+
+      '<div class="pd-lz-rank-meta">'+item.count+'x · '+fmtInt(item.vol)+' pçs</div>'+
+    '</div>';
+  }).join('');
+}
+
 function renderLimpeza(){
-  var filtered = LIMPEZA_ROWS.filter(function(r){ return r[0]>=STATE.startDoy && r[0]<=STATE.endDoy; });
+  // Aplica os mesmos filtros globais de Turno/Operador/Ferramenta -- Máquina fica de fora de
+  // propósito, essa aba não tem coluna de injetora (é por operador+ferramenta).
+  var filtered = LIMPEZA_ROWS.filter(function(r){
+    if(r[0]<STATE.startDoy || r[0]>STATE.endDoy) return false;
+    if(STATE.turnoFilter.length && STATE.turnoFilter.indexOf(turnoCategory(r[1]))===-1) return false;
+    if(STATE.operadorFilter.length && STATE.operadorFilter.indexOf(r[3])===-1) return false;
+    if(STATE.ferramentaFilter.length && STATE.ferramentaFilter.indexOf(r[4])===-1) return false;
+    return true;
+  });
 
   var totalLimpa = filtered.reduce(function(a,r){ return a+(r[6]||0); }, 0);
   var totalRefugo = filtered.reduce(function(a,r){ return a+(r[5]||0); }, 0);
   var pctRefugo = (totalRefugo+totalLimpa)>0 ? totalRefugo/(totalRefugo+totalLimpa)*100 : null;
   var pecasDistintas = new Set(filtered.map(function(r){return r[4];}).filter(Boolean)).size;
 
-  document.getElementById('pd-limpeza-total-limpa').textContent = fmtInt(totalLimpa);
-  document.getElementById('pd-limpeza-total-refugo').textContent = fmtInt(totalRefugo);
-  document.getElementById('pd-limpeza-pct-refugo').textContent = pctRefugo===null ? '—' : fmtPct(pctRefugo,1);
-  document.getElementById('pd-limpeza-pecas-distintas').textContent = pecasDistintas;
+  animateCounter(document.getElementById('pd-limpeza-total-limpa'), totalLimpa, fmtInt);
+  animateCounter(document.getElementById('pd-limpeza-total-refugo'), totalRefugo, fmtInt);
+  if(pctRefugo===null) document.getElementById('pd-limpeza-pct-refugo').textContent = '—';
+  else animateCounter(document.getElementById('pd-limpeza-pct-refugo'), pctRefugo, function(v){ return fmtPct(v,1); });
+  animateCounter(document.getElementById('pd-limpeza-pecas-distintas'), pecasDistintas, function(v){ return Math.round(v); });
 
   var byDay = {};
   filtered.forEach(function(r){
@@ -2574,8 +2731,8 @@ function renderLimpeza(){
   if(days.length){
     var limpaValues = days.map(function(d){ return byDay[d].limpa; });
     var refugoPctValues = days.map(function(d){ var b=byDay[d]; return (b.limpa+b.refugo)>0 ? b.refugo/(b.limpa+b.refugo)*100 : 0; });
-    renderLineChart('pd-limpeza-chart-qtd', days, limpaValues, {min:0,max:Math.max.apply(null,limpaValues)*1.15 || 10,decimals:0,suffix:'',color:'#22c55e',kind:'limpeza-qtd'});
-    renderLineChart('pd-limpeza-chart-refugo', days, refugoPctValues, {min:0,max:Math.max(10,Math.max.apply(null,refugoPctValues)*1.3),decimals:1,suffix:'%',color:'#ef4444',kind:'limpeza-refugo'});
+    renderTechLineChart('pd-limpeza-chart-qtd', days, limpaValues, {min:0,max:Math.max.apply(null,limpaValues)*1.15 || 10,suffix:'',color:'#22c55e'});
+    renderTechLineChart('pd-limpeza-chart-refugo', days, refugoPctValues, {min:0,max:Math.max(10,Math.max.apply(null,refugoPctValues)*1.3),suffix:'%',color:'#ef4444'});
   } else {
     document.getElementById('pd-limpeza-chart-qtd').innerHTML = '<div class="pd-empty">Sem dados de limpeza nesse período.</div>';
     document.getElementById('pd-limpeza-chart-refugo').innerHTML = '<div class="pd-empty">Sem dados de limpeza nesse período.</div>';
@@ -2584,7 +2741,16 @@ function renderLimpeza(){
   document.querySelectorAll('#pd-limpeza-seg button').forEach(function(b){ b.classList.toggle('active', b.dataset.k===STATE.limpezaView); });
   var kind = STATE.limpezaView || 'ferramenta';
   var list = limpezaBreakdownByIdx(filtered, LIMPEZA_KIND_IDX[kind]);
-  document.getElementById('pd-limpeza-breakdown').innerHTML = buildBreakdownTable(list, LIMPEZA_KIND_LABEL[kind], 10, null);
+  document.getElementById('pd-limpeza-breakdown').innerHTML = renderLimpezaBreakdown(list, 10);
+  // As barras nascem em width:0% (definido no CSS/HTML) e só ganham a largura real depois de um
+  // frame -- é o que faz a transição CSS de fato animar em vez de já aparecer preenchida.
+  requestAnimationFrame(function(){
+    document.querySelectorAll('#pd-limpeza-breakdown .pd-lz-rank-bar-fill').forEach(function(bar){
+      bar.style.width = bar.dataset.target+'%';
+    });
+  });
+
+  document.getElementById('pd-limpeza-detail-count').textContent = filtered.length+' apontamento(s) de limpeza no recorte atual';
 
   // Tabela detalhada, ordenável -- clique no cabeçalho alterna asc/desc.
   var sorted = filtered.slice();
@@ -2758,6 +2924,12 @@ document.getElementById('pd-limpeza-seg').addEventListener('click', function(e){
   var b = e.target.closest('button'); if(!b) return;
   STATE.limpezaView = b.dataset.k;
   renderLimpeza();
+});
+document.getElementById('pd-limpeza-detail-toggle').addEventListener('click', function(){
+  var wrap = document.getElementById('pd-limpeza-detail-wrap');
+  var isOpen = wrap.classList.toggle('open');
+  this.classList.toggle('open', isOpen);
+  this.childNodes[0].textContent = isOpen ? 'Ocultar linha a linha ' : 'Ver linha a linha ';
 });
 document.getElementById('pd-limpeza-table').addEventListener('click', function(e){
   var th = e.target.closest('th[data-k]'); if(!th) return;
