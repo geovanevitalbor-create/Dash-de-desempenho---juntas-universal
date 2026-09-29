@@ -219,7 +219,9 @@
   @keyframes pdLzFadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   @keyframes pdLzPulse{0%,100%{opacity:1;}50%{opacity:.5;}}
   @keyframes pdLzDraw{to{stroke-dashoffset:0;}}
-  .pd-lz-hero{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;}
+  .pd-lz-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .pd-lz-hero-costs{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px;}
+  .pd-lz-costs-label{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin:18px 0 -2px;}
   .pd-lz-card{position:relative;background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);
     border:1px solid var(--border);border-radius:16px;padding:20px;overflow:hidden;
     animation:pdLzFadeUp .45s ease both;}
@@ -741,11 +743,20 @@
             <div class="pd-lz-value" id="pd-limpeza-pecas-distintas">0</div>
             <div class="pd-lz-unit">ferramentas passaram pela limpeza</div>
           </div>
+        </div>
+        <div class="pd-lz-costs-label">Custos</div>
+        <div class="pd-lz-hero-costs">
           <div class="pd-lz-card" style="--lz-glow:rgba(168,85,247,.22);" id="pd-limpeza-custo-card">
             <div class="pd-lz-icon violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M17 7.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5 2.2 3 5 3.5c2.8.5 5 1.6 5 3.5s-2.2 3.5-5 3.5-5-1.6-5-3.5"/></svg></div>
-            <div class="pd-lz-label">Custo de limpeza</div>
-            <div class="pd-lz-value" id="pd-limpeza-custo-total" style="font-size:24px;">—</div>
+            <div class="pd-lz-label">Custo de material</div>
+            <div class="pd-lz-value" id="pd-limpeza-custo-total" style="font-size:26px;">—</div>
             <div class="pd-lz-unit" id="pd-limpeza-custo-unit">no período selecionado</div>
+          </div>
+          <div class="pd-lz-card" style="--lz-glow:rgba(236,72,153,.22);" id="pd-limpeza-mao-obra-card">
+            <div class="pd-lz-icon" style="background:rgba(236,72,153,.14);color:#ec4899;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/></svg></div>
+            <div class="pd-lz-label">Custo de mão de obra</div>
+            <div class="pd-lz-value" id="pd-limpeza-custo-mao-obra" style="font-size:26px;">—</div>
+            <div class="pd-lz-unit" id="pd-limpeza-custo-mao-obra-unit">no período selecionado</div>
           </div>
         </div>
         <div class="pd-top-row" style="grid-template-columns:1fr 1fr;">
@@ -794,7 +805,8 @@
                   <th data-k="refugos" style="cursor:pointer;">Refugos</th>
                   <th data-k="refugoPct" style="cursor:pointer;">% refugo</th>
                   <th data-k="motivo" style="cursor:pointer;">Motivo</th>
-                  <th data-k="custoTotal" style="cursor:pointer;">Custo</th>
+                  <th data-k="custoTotal" style="cursor:pointer;">Custo material</th>
+                  <th data-k="custoMaoObra" style="cursor:pointer;">Custo mão de obra</th>
                 </tr></thead>
                 <tbody id="pd-limpeza-table-body"></tbody>
               </table>
@@ -858,6 +870,23 @@
               </div>
             </div>
           </div>
+          <div class="pd-config-row" style="align-items:flex-start;">
+            <div><div class="pd-config-label">Custo de mão de obra (Limpeza)</div><div class="pd-config-desc">Custo diário do operador = (salário base × fator de encargos) ÷ dias úteis. Esse custo diário é dividido pela quantidade TOTAL que aquele operador limpou naquele dia (somando todos os apontamentos dela, não só os que passam pelos filtros de cima) — o resultado é o custo de mão de obra por peça daquele dia, aplicado a cada apontamento dela.</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-num);font-size:12.5px;">
+                <span style="width:150px;color:var(--text-dim);">Salário base</span> R$
+                <input type="number" class="pd-config-input" id="pd-cfg-custo-salario" value="2500" min="0" step="50" style="width:100px;">
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-num);font-size:12.5px;">
+                <span style="width:150px;color:var(--text-dim);">Fator de encargos</span> ×
+                <input type="number" class="pd-config-input" id="pd-cfg-custo-fator" value="1.5" min="1" step="0.05" style="width:100px;">
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;font-family:var(--font-num);font-size:12.5px;">
+                <span style="width:150px;color:var(--text-dim);">Dias úteis no mês</span>
+                <input type="number" class="pd-config-input" id="pd-cfg-custo-dias" value="21" min="1" max="31" step="1" style="width:100px;">
+              </div>
+            </div>
+          </div>
           <div class="pd-config-row">
             <div><div class="pd-config-label">Textos explicativos</div><div class="pd-config-desc">Os parágrafos de contexto abaixo de alguns títulos (ex: a explicação do Comparativo). Desmarque pra deixar as telas mais enxutas, só com os números.</div></div>
             <div><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;color:var(--text-dim);white-space:nowrap;"><input type="checkbox" id="pd-cfg-show-help" checked style="width:16px;height:16px;accent-color:var(--brand-green);cursor:pointer;"> Mostrar</label></div>
@@ -917,7 +946,7 @@ function firstDayOfMonthDoy(doy){
 }
 var DEFAULT_START_DOY = 0;
 
-var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, activeView:'geral', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', limpezaView:'ferramenta', limpezaDrill:null, minDesemp:0, maxDesemp:120, turnoFilter:[], operadorFilter:[], maquinaFilter:[], ferramentaFilter:[], chartRange:'all', selectedMachine:null, turnosSortKey:null, turnosSortDir:'asc', showHelpText:true,
+var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, activeView:'geral', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', limpezaView:'ferramenta', limpezaDrill:null, custoOperadorSalario:2500, custoOperadorFator:1.5, custoOperadorDiasUteis:21, minDesemp:0, maxDesemp:120, turnoFilter:[], operadorFilter:[], maquinaFilter:[], ferramentaFilter:[], chartRange:'all', selectedMachine:null, turnosSortKey:null, turnosSortDir:'asc', showHelpText:true,
   turnoRanges:[ {name:'Comercial', start:'07:30', end:'17:28'}, {name:'Manhã', start:'06:15', end:'12:30'}, {name:'Tarde', start:'12:20', end:'21:15'}, {name:'Noite', start:'21:00', end:'06:30'} ] };
 function turnoCategory(raw){
   if(raw==='Dia') return 'Dia';
@@ -2763,6 +2792,30 @@ function renderTechBreakdown(list, limit, kind){
   }).join('');
 }
 
+/** Soma a quantidade limpa de CADA operador em CADA dia, usando o dataset INTEIRO (não o filtrado
+ * pela barra de cima) -- é o divisor certo pra achar quanto ela limpou naquele dia de verdade,
+ * mesmo que um filtro de Turno/Ferramenta esteja escondendo parte dos apontamentos dela agora.
+ * Chave: "operador|doy". */
+function buildOperatorDayTotals(allRows){
+  var totals = {};
+  allRows.forEach(function(r){
+    if(!r[3]) return; // sem operador identificado, não dá pra atribuir custo de mão de obra
+    var key = r[3]+'|'+r[0];
+    totals[key] = (totals[key]||0) + (r[6]||0);
+  });
+  return totals;
+}
+/** Custo de mão de obra de UMA linha: custo diário do operador (salário×fator÷dias úteis) dividido
+ * pelo total que ELE limpou naquele dia inteiro, vezes a quantidade dessa linha específica -- assim,
+ * somando todas as linhas dele num dia, dá exatamente o custo diário (distribuído proporcional entre
+ * as sessões). Retorna null se não der pra calcular (sem operador, ou dia sem total>0). */
+function custoMaoDeObraLinha(r, dayTotals, custoDiario){
+  if(!r[3]) return null;
+  var totalDia = dayTotals[r[3]+'|'+r[0]];
+  if(!totalDia) return null;
+  return Math.round((custoDiario / totalDia) * (r[6]||0) * 100) / 100;
+}
+
 function renderLimpeza(){
   // Aplica os mesmos filtros globais de Turno/Operador/Ferramenta -- Máquina fica de fora de
   // propósito, essa aba não tem coluna de injetora (é por operador+ferramenta).
@@ -2796,6 +2849,24 @@ function renderLimpeza(){
   animateCounter(custoEl, comCusto.length===0 ? null : totalCusto, fmtCurrency);
   custoUnitEl.textContent = comCusto.length===0 ? 'sem dado de custo nesse período'
     : (semCusto>0 ? (semCusto+' apontamento(s) sem custo, não entram na soma') : 'no período selecionado');
+
+  // Custo de mão de obra: usa o dataset INTEIRO (LIMPEZA_ROWS, não "filtered") só pra achar quanto
+  // cada operador limpou em cada dia -- o divisor tem que ser o dia real dela, senão um filtro de
+  // Turno/Ferramenta ativo infla o custo por peça sem motivo. A SOMA que aparece no card, porém, é
+  // só das linhas que estão em "filtered" (respeitando os filtros de cima), cada uma com sua fatia
+  // proporcional já calculada certa.
+  var custoDiarioOperador = (STATE.custoOperadorSalario * STATE.custoOperadorFator) / STATE.custoOperadorDiasUteis;
+  var dayTotals = buildOperatorDayTotals(LIMPEZA_ROWS);
+  var comMaoDeObra = 0, semOperadorParaCusto = 0, totalMaoDeObra = 0;
+  filtered.forEach(function(r){
+    var c = custoMaoDeObraLinha(r, dayTotals, custoDiarioOperador);
+    if(c===null) semOperadorParaCusto++; else { comMaoDeObra++; totalMaoDeObra += c; }
+  });
+  var maoObraEl = document.getElementById('pd-limpeza-custo-mao-obra');
+  var maoObraUnitEl = document.getElementById('pd-limpeza-custo-mao-obra-unit');
+  animateCounter(maoObraEl, comMaoDeObra===0 ? null : totalMaoDeObra, fmtCurrency);
+  maoObraUnitEl.textContent = comMaoDeObra===0 ? 'sem operador identificado nesse período'
+    : (semOperadorParaCusto>0 ? (semOperadorParaCusto+' apontamento(s) sem operador, não entram na soma') : 'no período selecionado');
 
   var byDay = {};
   filtered.forEach(function(r){
@@ -2847,10 +2918,13 @@ function renderLimpeza(){
 
   document.getElementById('pd-limpeza-detail-count').textContent = tableRows.length+' apontamento(s)'+(drill?' (filtrado por '+drill.value+')':' de limpeza no recorte atual');
 
-  // Tabela detalhada, ordenável -- clique no cabeçalho alterna asc/desc.
-  var sorted = tableRows.slice();
+  // Tabela detalhada, ordenável -- clique no cabeçalho alterna asc/desc. Custo de mão de obra não é
+  // uma coluna fixa do array (é calculado com dayTotals/custoDiarioOperador, já obtidos acima pro
+  // card), então anexa no fim de cada linha (índice 11) só pra essa renderização poder ordenar/
+  // mostrar junto com o resto.
+  var sorted = tableRows.map(function(r){ return r.concat([custoMaoDeObraLinha(r, dayTotals, custoDiarioOperador)]); });
   var sk = LIMPEZA_SORT.key, sd = LIMPEZA_SORT.dir;
-  var keyIdx = {doy:0, turno:1, material:2, operador:3, ferramenta:4, refugos:5, quantidadeLimpa:6, refugoPct:7, motivo:8, custoTotal:10};
+  var keyIdx = {doy:0, turno:1, material:2, operador:3, ferramenta:4, refugos:5, quantidadeLimpa:6, refugoPct:7, motivo:8, custoTotal:10, custoMaoObra:11};
   sorted.sort(function(a,b){
     var av=a[keyIdx[sk]], bv=b[keyIdx[sk]];
     if(av===null||av===undefined) av = (typeof bv==='number') ? -Infinity : '';
@@ -2858,7 +2932,7 @@ function renderLimpeza(){
     var cmp = (av>bv) ? 1 : (av<bv ? -1 : 0);
     return sd==='asc' ? cmp : -cmp;
   });
-  var LIMPEZA_TABLE_LABELS = {doy:'Data', turno:'Turno', material:'Material', operador:'Operador', ferramenta:'Ferramenta', quantidadeLimpa:'Qtd. limpa', refugos:'Refugos', refugoPct:'% refugo', motivo:'Motivo', custoTotal:'Custo'};
+  var LIMPEZA_TABLE_LABELS = {doy:'Data', turno:'Turno', material:'Material', operador:'Operador', ferramenta:'Ferramenta', quantidadeLimpa:'Qtd. limpa', refugos:'Refugos', refugoPct:'% refugo', motivo:'Motivo', custoTotal:'Custo material', custoMaoObra:'Custo mão de obra'};
   document.querySelectorAll('#pd-limpeza-table th[data-k]').forEach(function(th){
     var k = th.dataset.k, isSorted = k===sk;
     th.textContent = LIMPEZA_TABLE_LABELS[k] + (isSorted ? (sd==='asc' ? ' ▲' : ' ▼') : '');
@@ -2866,8 +2940,9 @@ function renderLimpeza(){
   document.getElementById('pd-limpeza-table-body').innerHTML = sorted.length ? sorted.map(function(r){
     return '<tr><td>'+doyToStr(r[0])+'</td><td>'+(r[1]||'—')+'</td><td>'+(r[2]||'—')+'</td><td>'+(r[3]||'—')+'</td>'+
       '<td>'+(r[4]||'—')+'</td><td>'+fmtInt(r[6]||0)+'</td><td>'+fmtInt(r[5]||0)+'</td>'+
-      '<td>'+(r[7]===null?'—':fmtPct(r[7],1))+'</td><td>'+(r[8]||'—')+'</td><td>'+(r[10]===null||r[10]===undefined?'—':fmtCurrency(r[10]))+'</td></tr>';
-  }).join('') : '<tr><td colspan="10" class="pd-empty">Sem apontamentos de limpeza nesse período.</td></tr>';
+      '<td>'+(r[7]===null?'—':fmtPct(r[7],1))+'</td><td>'+(r[8]||'—')+'</td><td>'+(r[10]===null||r[10]===undefined?'—':fmtCurrency(r[10]))+'</td>'+
+      '<td>'+(r[11]===null||r[11]===undefined?'—':fmtCurrency(r[11]))+'</td></tr>';
+  }).join('') : '<tr><td colspan="11" class="pd-empty">Sem apontamentos de limpeza nesse período.</td></tr>';
 }
 
 function renderRelatorios(){
@@ -3226,6 +3301,9 @@ document.getElementById('pd-cfg-apply').addEventListener('click', function(){
   STATE.turnoFilter = []; renderMultiFilterPanel('turno', TURNO_FILTER_OPTIONS);
   STATE.showHelpText = document.getElementById('pd-cfg-show-help').checked;
   document.getElementById('pd-content').classList.toggle('pd-hide-help', !STATE.showHelpText);
+  STATE.custoOperadorSalario = parseFloat(document.getElementById('pd-cfg-custo-salario').value)||2500;
+  STATE.custoOperadorFator = parseFloat(document.getElementById('pd-cfg-custo-fator').value)||1.5;
+  STATE.custoOperadorDiasUteis = parseFloat(document.getElementById('pd-cfg-custo-dias').value)||21;
   renderAll();
   switchView('geral');
 });
