@@ -105,8 +105,9 @@
   .pd-content.pd-hide-help .pd-help-text, .pd-content.pd-hide-help .pd-config-desc{display:none;}
 
   .pd-gauge-card{display:flex;flex-direction:column;align-items:center;}
-  #view-geral .pd-gauge-card{background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);
-    animation:pdLzFadeUp .45s ease both;cursor:pointer;transition:border-color .2s,transform .2s;}
+  #view-geral .pd-gauge-card, #view-refugo .pd-gauge-card{background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);
+    animation:pdLzFadeUp .45s ease both;}
+  #view-geral .pd-gauge-card{cursor:pointer;transition:border-color .2s,transform .2s;}
   #view-geral .pd-gauge-card:hover{border-color:var(--brand-green);transform:translateY(-2px);}
   .pd-gauge-value{font-family:var(--font-num);font-size:29px;font-weight:600;margin-top:-20px;}
   .pd-gauge-scale{display:flex;justify-content:space-between;width:100%;font-size:10.5px;
@@ -680,11 +681,12 @@
             <div class="pd-gauge-value" id="pd-gauge-refugo2-value">—</div>
             <div class="pd-gauge-scale"><span>0%</span><span class="mid">Meta: ≤2%</span><span>10%</span></div>
           </div>
-          <div class="pd-card">
-            <div class="pd-card-title" style="margin-bottom:10px;">Total refugado</div>
-            <div class="pd-stat-value" id="pd-refugo-total-pecas" style="font-size:28px;">—</div>
-            <div class="pd-stat-unit">peças, no período selecionado</div>
-            <div id="pd-refugo-vs-anterior" style="margin-top:14px;font-size:12px;color:var(--text-faint);">—</div>
+          <div class="pd-lz-card" style="--lz-glow:rgba(220,38,38,.22);">
+            <div class="pd-lz-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.5h15"/><path d="M6.5 7.5l1.1 12.4a1.5 1.5 0 0 0 1.5 1.4h5.8a1.5 1.5 0 0 0 1.5-1.4l1.1-12.4"/></svg></div>
+            <div class="pd-lz-label">Total refugado</div>
+            <div class="pd-lz-value" id="pd-refugo-total-pecas">0</div>
+            <div class="pd-lz-unit">peças, no período selecionado</div>
+            <div id="pd-refugo-vs-anterior" style="margin-top:12px;font-size:12px;color:var(--text-faint);position:relative;z-index:1;">—</div>
           </div>
           <div class="pd-card">
             <div class="pd-card-title" style="margin-bottom:2px;">Maiores contribuintes</div>
@@ -692,20 +694,20 @@
             <div id="pd-refugo-top-contrib"></div>
           </div>
         </div>
-        <div class="pd-card pd-chart-card">
-          <div class="pd-card-title">Evolução do refugo no período</div>
+        <div class="pd-lz-chart-card">
+          <div class="pd-lz-chart-title"><span class="pd-lz-dot" style="background:var(--red);box-shadow:0 0 8px var(--red);"></span>Evolução do refugo no período</div>
           <div id="pd-refugo-chart"></div>
           <div class="pd-chart-note">Refugo ponderado (refugos ÷ (refugos+boas)) por dia, dentro do período e filtros selecionados no topo · clique num ponto pra abrir os apontamentos daquele dia</div>
         </div>
         <div class="pd-card">
           <div class="pd-card-title" style="margin-bottom:10px;">Quebra do refugo por</div>
-          <div class="pd-seg" id="pd-refugo-seg">
+          <div class="pd-lz-seg" id="pd-refugo-seg">
             <button data-k="tudo" class="active">Tudo junto</button>
             <button data-k="motivo">Motivos</button>
             <button data-k="operador">Operador</button>
             <button data-k="ferramenta">Ferramenta</button>
           </div>
-          <div class="pd-page-sub pd-help-text" style="margin-bottom:12px;">Exclui apontamentos marcados "Sem Refugos". Barra = % do total refugado no período selecionado. Clique numa linha pra ver o histórico completo daquele motivo/operador/ferramenta.</div>
+          <div class="pd-page-sub pd-help-text" style="margin-bottom:14px;">Exclui apontamentos marcados "Sem Refugos". Barra = % do total refugado no período selecionado. Clique numa linha pra ver o histórico completo daquele motivo/operador/ferramenta.</div>
           <div id="pd-refugo-breakdown"></div>
         </div>
       </div>
@@ -2364,8 +2366,8 @@ function openRefugoEntityModal(kind, name){
   document.getElementById('pd-modal-close-btn').onclick = closeModal;
 }
 document.getElementById('pd-refugo-breakdown').addEventListener('click', function(e){
-  var tr = e.target.closest('tr[data-refugo-kind]'); if(!tr) return;
-  openRefugoEntityModal(tr.dataset.refugoKind, tr.dataset.refugoName);
+  var row = e.target.closest('.pd-lz-rank-row[data-kind]'); if(!row) return;
+  openRefugoEntityModal(row.dataset.kind, row.dataset.value);
 });
 document.getElementById('pd-refugo-top-contrib').addEventListener('click', function(e){
   var el = e.target.closest('[data-refugo-kind]'); if(!el) return;
@@ -2380,8 +2382,9 @@ function renderRefugo(){
   var agg = computeAgg(STATE.startDoy, STATE.endDoy);
   renderGauge('pd-gauge-refugo2', agg.refugoWeighted, {scaleMax:10, metaValue:STATE.metaRefugo, zones:[
     {from:0,to:3,color:'#22c55e'},{from:3,to:5,color:'#eab308'},{from:5,to:7,color:'#f97316'},{from:7,to:10,color:'#ef4444'}]});
-  var gv=document.getElementById('pd-gauge-refugo2-value'); gv.textContent=fmtPct(agg.refugoWeighted); gv.style.color=statusColor(agg.refugoWeighted,STATE.metaRefugo,true);
-  document.getElementById('pd-refugo-total-pecas').textContent = fmtInt(agg.sumRefugos);
+  var gv=document.getElementById('pd-gauge-refugo2-value'); gv.style.color=statusColor(agg.refugoWeighted,STATE.metaRefugo,true);
+  if(agg.refugoWeighted===null||agg.refugoWeighted===undefined) gv.textContent='—'; else animateCounter(gv, agg.refugoWeighted, fmtPct);
+  animateCounter(document.getElementById('pd-refugo-total-pecas'), agg.sumRefugos, fmtInt);
 
   // Comparação com o período imediatamente anterior, de mesmo tamanho -- ex: se o período selecionado
   // tem 30 dias, compara com os 30 dias anteriores a ele. Se não há dados nesse intervalo anterior
@@ -2428,17 +2431,22 @@ function renderRefugo(){
   var v = STATE.refugoView;
   var out = '';
   if(v==='tudo'){
-    out += '<div class="pd-modal-section-title">Por motivo</div>'+buildBreakdownTable(refugoBreakdownByIdx(agg.filtered,10),'Motivo',6,'motivo');
-    out += '<div class="pd-modal-section-title" style="margin-top:20px;">Por operador</div>'+buildBreakdownTable(refugoBreakdownByIdx(agg.filtered,11),'Operador',6,'operador');
-    out += '<div class="pd-modal-section-title" style="margin-top:20px;">Por ferramenta</div>'+buildBreakdownTable(refugoBreakdownByIdx(agg.filtered,12),'Ferramenta',6,'ferramenta');
+    out += '<div class="pd-modal-section-title">Por motivo</div>'+renderTechBreakdown(refugoBreakdownByIdx(agg.filtered,10),6,'motivo');
+    out += '<div class="pd-modal-section-title" style="margin-top:20px;">Por operador</div>'+renderTechBreakdown(refugoBreakdownByIdx(agg.filtered,11),6,'operador');
+    out += '<div class="pd-modal-section-title" style="margin-top:20px;">Por ferramenta</div>'+renderTechBreakdown(refugoBreakdownByIdx(agg.filtered,12),6,'ferramenta');
   } else if(v==='motivo'){
-    out = buildBreakdownTable(refugoBreakdownByIdx(agg.filtered,10),'Motivo',20,'motivo');
+    out = renderTechBreakdown(refugoBreakdownByIdx(agg.filtered,10),20,'motivo');
   } else if(v==='operador'){
-    out = buildBreakdownTable(refugoBreakdownByIdx(agg.filtered,11),'Operador',40,'operador');
+    out = renderTechBreakdown(refugoBreakdownByIdx(agg.filtered,11),40,'operador');
   } else if(v==='ferramenta'){
-    out = buildBreakdownTable(refugoBreakdownByIdx(agg.filtered,12),'Ferramenta',40,'ferramenta');
+    out = renderTechBreakdown(refugoBreakdownByIdx(agg.filtered,12),40,'ferramenta');
   }
   document.getElementById('pd-refugo-breakdown').innerHTML = out;
+  requestAnimationFrame(function(){
+    document.querySelectorAll('#pd-refugo-breakdown .pd-lz-rank-bar-fill').forEach(function(bar){
+      bar.style.width = bar.dataset.target+'%';
+    });
+  });
 }
 
 var MONTH_NAMES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -2731,7 +2739,7 @@ function renderTechBreakdown(list, limit, kind){
   var max = list[0].vol || 1;
   return list.map(function(item,i){
     var badgeCls = i===0?'gold':(i===1?'silver':(i===2?'bronze':''));
-    return '<div class="pd-lz-rank-row" data-kind="'+kind+'" data-value="'+item.name.replace(/"/g,'&quot;')+'" style="animation-delay:'+(i*0.04)+'s;" title="Clique pra ver só os apontamentos de '+item.name.replace(/"/g,'&quot;')+' no histórico detalhado">'+
+    return '<div class="pd-lz-rank-row" data-kind="'+kind+'" data-value="'+item.name.replace(/"/g,'&quot;')+'" style="animation-delay:'+(i*0.04)+'s;" title="Clique pra ver o histórico completo de '+item.name.replace(/"/g,'&quot;')+'">'+
       '<div class="pd-lz-rank-badge '+badgeCls+'">'+(i+1)+'</div>'+
       '<div class="pd-lz-rank-name">'+item.name+'</div>'+
       '<div class="pd-lz-rank-bar-track"><div class="pd-lz-rank-bar-fill" data-target="'+(item.vol/max*100)+'"></div></div>'+
