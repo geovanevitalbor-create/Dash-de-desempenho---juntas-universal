@@ -105,20 +105,29 @@
   .pd-content.pd-hide-help .pd-help-text, .pd-content.pd-hide-help .pd-config-desc{display:none;}
 
   .pd-gauge-card{display:flex;flex-direction:column;align-items:center;}
+  #view-geral .pd-gauge-card{background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);
+    animation:pdLzFadeUp .45s ease both;cursor:pointer;transition:border-color .2s,transform .2s;}
+  #view-geral .pd-gauge-card:hover{border-color:var(--brand-green);transform:translateY(-2px);}
   .pd-gauge-value{font-family:var(--font-num);font-size:29px;font-weight:600;margin-top:-20px;}
   .pd-gauge-scale{display:flex;justify-content:space-between;width:100%;font-size:10.5px;
     color:var(--text-faint);margin-top:2px;font-family:var(--font-num);}
   .pd-gauge-scale .mid{color:var(--text-dim);font-weight:600;}
 
   .pd-stats-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:14px;}
-  .pd-stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 15px;
-    display:flex;flex-direction:column;justify-content:center;}
-  .pd-stat-label{font-size:10px;color:var(--text-faint);font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
-  .pd-stat-value{font-family:var(--font-num);font-size:20px;font-weight:600;margin-top:7px;}
-  .pd-stat-unit{font-size:10.5px;color:var(--text-dim);font-weight:500;margin-top:1px;}
+  .pd-stat-card{background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);border:1px solid var(--border);border-radius:14px;padding:13px 15px;
+    display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;
+    animation:pdLzFadeUp .45s ease both;cursor:pointer;transition:border-color .2s,transform .2s;}
+  .pd-stat-card:hover{border-color:var(--brand-green);transform:translateY(-2px);}
+  .pd-stat-card:nth-child(2){animation-delay:.05s;}
+  .pd-stat-card:nth-child(3){animation-delay:.1s;}
+  .pd-stat-card:nth-child(4){animation-delay:.15s;}
+  .pd-stat-label{font-size:10px;color:var(--text-faint);font-weight:700;letter-spacing:.5px;text-transform:uppercase;position:relative;z-index:1;}
+  .pd-stat-value{font-family:var(--font-num);font-size:20px;font-weight:600;margin-top:7px;position:relative;z-index:1;}
+  .pd-stat-unit{font-size:10.5px;color:var(--text-dim);font-weight:500;margin-top:1px;position:relative;z-index:1;}
   .pd-stat-of{font-size:13px;color:var(--text-faint);font-weight:500;}
 
-  .pd-summary-card{display:flex;flex-direction:column;gap:13px;}
+  .pd-summary-card{display:flex;flex-direction:column;gap:13px;background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);
+    animation:pdLzFadeUp .45s ease both;animation-delay:.2s;}
   .pd-summary-row{display:flex;justify-content:space-between;align-items:center;margin-top:2px;}
   .pd-summary-label{font-size:12.5px;color:var(--text-dim);display:flex;align-items:center;gap:8px;font-weight:500;}
   .pd-summary-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
@@ -202,7 +211,7 @@
 
   .pd-charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   @media (max-width:900px){.pd-charts-row{grid-template-columns:1fr;}}
-  .pd-chart-card svg{width:100%;height:auto;display:block;margin-top:6px;cursor:pointer;}
+  .pd-chart-card svg, .pd-lz-chart-card svg{width:100%;height:auto;display:block;margin-top:6px;cursor:pointer;}
   .pd-chart-note{font-size:10.5px;color:var(--text-faint);margin-top:4px;}
 
   /* ===== Limpeza de Peça — visual dedicado, mais tecnológico ===== */
@@ -530,12 +539,12 @@
         </div>
 
         <div class="pd-charts-row">
-          <div class="pd-card pd-chart-card">
-            <div class="pd-card-title">Desempenho médio por dia</div>
+          <div class="pd-lz-chart-card">
+            <div class="pd-lz-chart-title"><span class="pd-lz-dot" style="background:var(--brand-green);box-shadow:0 0 8px var(--brand-green);"></span>Desempenho médio por dia</div>
             <div id="pd-chart-perf"></div>
           </div>
-          <div class="pd-card pd-chart-card">
-            <div class="pd-card-title">Refugo médio por dia (%)</div>
+          <div class="pd-lz-chart-card">
+            <div class="pd-lz-chart-title"><span class="pd-lz-dot" style="background:var(--red);box-shadow:0 0 8px var(--red);"></span>Refugo médio por dia (%)</div>
             <div id="pd-chart-scrap"></div>
           </div>
         </div>
@@ -1702,15 +1711,21 @@ function renderOverview(){
   document.getElementById('pd-gauge-perf-meta').textContent = 'Meta: '+T.metaDesemp+'%';
   document.getElementById('pd-gauge-scrap-meta').textContent = 'Meta: ≤'+T.metaRefugo+'%';
 
-  var pv=document.getElementById('pd-gauge-perf-value'); pv.textContent=fmtPct(agg.desempWeighted); pv.style.color=statusColor(agg.desempWeighted,T.metaDesemp,false);
-  var sv=document.getElementById('pd-gauge-scrap-value'); sv.textContent=fmtPct(agg.refugoWeighted); sv.style.color=statusColor(agg.refugoWeighted,T.metaRefugo,true);
+  var pv=document.getElementById('pd-gauge-perf-value'); pv.style.color=statusColor(agg.desempWeighted,T.metaDesemp,false);
+  if(agg.desempWeighted===null||agg.desempWeighted===undefined) pv.textContent='—'; else animateCounter(pv, agg.desempWeighted, fmtPct);
+  var sv=document.getElementById('pd-gauge-scrap-value'); sv.style.color=statusColor(agg.refugoWeighted,T.metaRefugo,true);
+  if(agg.refugoWeighted===null||agg.refugoWeighted===undefined) sv.textContent='—'; else animateCounter(sv, agg.refugoWeighted, fmtPct);
 
   var rangeDays = STATE.endDoy-STATE.startDoy+1;
   document.getElementById('pd-stats-grid').innerHTML =
-    '<div class="pd-stat-card"><div class="pd-stat-label">Peças boas</div><div class="pd-stat-value" style="color:#4dabf7">'+fmtInt(agg.sumBoas)+'</div><div class="pd-stat-unit">no período</div></div>'+
-    '<div class="pd-stat-card"><div class="pd-stat-label">Peças previstas</div><div class="pd-stat-value">'+fmtInt(agg.sumPrev)+'</div><div class="pd-stat-unit">no período</div></div>'+
-    '<div class="pd-stat-card"><div class="pd-stat-label">Máquinas ativas</div><div class="pd-stat-value" style="color:#4dabf7">'+agg.machinesActive+'<span class="pd-stat-of"> de '+FLEET.length+'</span></div></div>'+
-    '<div class="pd-stat-card"><div class="pd-stat-label">Dias com dados</div><div class="pd-stat-value">'+agg.daysWithData+'<span class="pd-stat-of"> de '+rangeDays+'</span></div></div>';
+    '<div class="pd-stat-card" data-trace="heatmap" title="Clique pra ver o detalhe no mapa de calor"><div class="pd-stat-label">Peças boas</div><div class="pd-stat-value" id="pd-stat-boas" style="color:#4dabf7">0</div><div class="pd-stat-unit">no período</div></div>'+
+    '<div class="pd-stat-card" data-trace="heatmap" title="Clique pra ver o detalhe no mapa de calor"><div class="pd-stat-label">Peças previstas</div><div class="pd-stat-value" id="pd-stat-prev">0</div><div class="pd-stat-unit">no período</div></div>'+
+    '<div class="pd-stat-card" data-trace="maquinas" title="Clique pra ver a página Máquinas"><div class="pd-stat-label">Máquinas ativas</div><div class="pd-stat-value" style="color:#4dabf7"><span id="pd-stat-machinesactive">0</span><span class="pd-stat-of"> de '+FLEET.length+'</span></div></div>'+
+    '<div class="pd-stat-card" data-trace="heatmap" title="Clique pra ver o detalhe no mapa de calor"><div class="pd-stat-label">Dias com dados</div><div class="pd-stat-value"><span id="pd-stat-dayswithdata">0</span><span class="pd-stat-of"> de '+rangeDays+'</span></div></div>';
+  animateCounter(document.getElementById('pd-stat-boas'), agg.sumBoas, fmtInt);
+  animateCounter(document.getElementById('pd-stat-prev'), agg.sumPrev, fmtInt);
+  animateCounter(document.getElementById('pd-stat-machinesactive'), agg.machinesActive, function(v){return Math.round(v);});
+  animateCounter(document.getElementById('pd-stat-dayswithdata'), agg.daysWithData, function(v){return Math.round(v);});
 
   document.getElementById('pd-summary').innerHTML =
     '<div class="pd-summary-row"><span class="pd-summary-label"><span class="pd-summary-dot" style="background:#4dabf7"></span>Melhor dia</span><span class="pd-summary-value" style="color:#22c55e">'+(agg.bestDay!==null?doyToStr(agg.bestDay):'—')+'</span></div>'+
@@ -2707,7 +2722,10 @@ function renderTechLineChart(containerId, dayKeys, values, opts){
 
 /** Ranking visual da Limpeza -- linhas com medalha nos 3 primeiros e barra em gradiente animada
  * (cresce de 0% até o valor real). Visual dedicado, não usa buildBreakdownTable de propósito. */
-function renderLimpezaBreakdown(list, limit, kind){
+/** Ranking visual "tecnológico" -- linhas com medalha nos 3 primeiros e barra em gradiente
+ * animada. Genérico, reaproveitado por qualquer página que precise desse tipo de ranking (não é
+ * exclusivo da Limpeza, mesmo tendo nascido lá). */
+function renderTechBreakdown(list, limit, kind){
   list = list.slice(0, limit||10);
   if(!list.length) return '<div class="pd-empty">Sem refugo registrado nesse recorte.</div>';
   var max = list[0].vol || 1;
@@ -2763,7 +2781,7 @@ function renderLimpeza(){
   document.querySelectorAll('#pd-limpeza-seg button').forEach(function(b){ b.classList.toggle('active', b.dataset.k===STATE.limpezaView); });
   var kind = STATE.limpezaView || 'ferramenta';
   var list = limpezaBreakdownByIdx(filtered, LIMPEZA_KIND_IDX[kind]);
-  document.getElementById('pd-limpeza-breakdown').innerHTML = renderLimpezaBreakdown(list, 10, kind);
+  document.getElementById('pd-limpeza-breakdown').innerHTML = renderTechBreakdown(list, 10, kind);
   // As barras nascem em width:0% (definido no CSS/HTML) e só ganham a largura real depois de um
   // frame -- é o que faz a transição CSS de fato animar em vez de já aparecer preenchida.
   requestAnimationFrame(function(){
@@ -2967,12 +2985,13 @@ document.getElementById('pd-limpeza-seg').addEventListener('click', function(e){
   STATE.limpezaView = b.dataset.k;
   renderLimpeza();
 });
-/** Abre (se ainda não estiver aberta) a tabela detalhada da Limpeza e rola até ela -- reaproveitado
- * tanto pelo botão "Ver linha a linha" quanto por clicar num card do topo ou numa linha do ranking
- * (a parte "rastreável": clicar num número leva direto pros dados que o formam). */
-function openLimpezaDetailTable(){
-  var wrap = document.getElementById('pd-limpeza-detail-wrap');
-  var toggleBtn = document.getElementById('pd-limpeza-detail-toggle');
+/** Abre (se ainda não estiver aberta) uma tabela de detalhe "rastreável" e rola até ela --
+ * genérico: recebe os IDs do wrap e do botão de alternar, pra qualquer página reaproveitar (a
+ * parte "rastreável": clicar num número leva direto pros dados que o formam, não é exclusivo
+ * da Limpeza mesmo tendo nascido lá). */
+function openTechDetailTable(wrapId, toggleId){
+  var wrap = document.getElementById(wrapId);
+  var toggleBtn = document.getElementById(toggleId);
   if(!wrap.classList.contains('open')){
     wrap.classList.add('open');
     toggleBtn.classList.add('open');
@@ -2990,13 +3009,13 @@ document.querySelector('.pd-lz-hero').addEventListener('click', function(e){
   if(!e.target.closest('.pd-lz-card')) return;
   STATE.limpezaDrill = null; // clicar num card do topo mostra TUDO no detalhe, sem recorte de ranking
   renderLimpeza();
-  openLimpezaDetailTable();
+  openTechDetailTable('pd-limpeza-detail-wrap', 'pd-limpeza-detail-toggle');
 });
 document.getElementById('pd-limpeza-breakdown').addEventListener('click', function(e){
   var row = e.target.closest('.pd-lz-rank-row'); if(!row) return;
   STATE.limpezaDrill = {kind:row.dataset.kind, value:row.dataset.value};
   renderLimpeza();
-  openLimpezaDetailTable();
+  openTechDetailTable('pd-limpeza-detail-wrap', 'pd-limpeza-detail-toggle');
 });
 document.getElementById('pd-limpeza-drill-chip').addEventListener('click', function(e){
   if(!e.target.closest('#pd-limpeza-drill-clear')) return;
@@ -3024,6 +3043,23 @@ document.getElementById('pd-geral-tab-seg').addEventListener('click', function(e
     document.getElementById(tabs[key]).style.display = (key===b.dataset.tab) ? (key==='heatmap'?'':'flex') : 'none';
   });
 });
+document.getElementById('pd-stats-grid').addEventListener('click', function(e){
+  var card = e.target.closest('.pd-stat-card'); if(!card) return;
+  handleGeralTrace(card.dataset.trace);
+});
+document.querySelectorAll('#view-geral .pd-gauge-card').forEach(function(card){
+  card.addEventListener('click', function(){ handleGeralTrace('heatmap'); });
+});
+/** Rastreabilidade da Visão Geral: os cards de estatística e os gauges não têm uma tabela própria
+ * (o detalhe real por máquina/dia é o mapa de calor), então clicar neles leva direto pra lá -- ou
+ * pra página Máquinas, no caso de "Máquinas ativas". */
+function handleGeralTrace(trace){
+  if(trace==='maquinas'){ switchView('maquinas'); return; }
+  if(trace==='heatmap'){
+    document.querySelector('#pd-geral-tab-seg button[data-tab="heatmap"]').click();
+    document.getElementById('geral-tab-heatmap').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
 ['pd-chart-perf','pd-chart-scrap'].forEach(function(id){
   document.getElementById(id).addEventListener('click', function(e){
