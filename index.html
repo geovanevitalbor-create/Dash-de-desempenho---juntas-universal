@@ -219,7 +219,7 @@
   @keyframes pdLzFadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
   @keyframes pdLzPulse{0%,100%{opacity:1;}50%{opacity:.5;}}
   @keyframes pdLzDraw{to{stroke-dashoffset:0;}}
-  .pd-lz-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .pd-lz-hero{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;}
   .pd-lz-hero-costs{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px;}
   .pd-lz-costs-label{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin:18px 0 -2px;}
   .pd-lz-card{position:relative;background:linear-gradient(160deg, var(--card) 0%, #0d1420 100%);
@@ -275,7 +275,8 @@
   .pd-lz-rank-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg, var(--red), #f97316);
     width:0%;transition:width 1s cubic-bezier(.22,1,.36,1);box-shadow:0 0 10px rgba(220,38,38,.45);}
   .pd-lz-rank-meta{flex:0 0 auto;font-family:var(--font-num);font-size:12px;color:var(--text-faint);white-space:nowrap;min-width:96px;text-align:right;}
-  @media (max-width:900px){.pd-lz-hero{grid-template-columns:1fr 1fr;} .pd-lz-rank-name{flex-basis:110px;}}
+  @media (max-width:1080px){.pd-lz-hero{grid-template-columns:repeat(3,minmax(0,1fr));}}
+  @media (max-width:900px){.pd-lz-hero{grid-template-columns:1fr 1fr;} .pd-lz-hero > .pd-lz-card:last-child:nth-child(odd){grid-column:1/-1;} .pd-lz-rank-name{flex-basis:110px;}}
   .pd-lz-toggle-detail{background:var(--card-2);border:1px solid var(--border);color:var(--text-dim);
     padding:9px 16px;border-radius:9px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:var(--font-ui);
     display:flex;align-items:center;gap:7px;}
@@ -337,6 +338,17 @@
   .pd-btn-mini{background:var(--card-2);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-ui);
     font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;transition:border-color .15s,color .15s;}
   .pd-btn-mini:hover{border-color:var(--brand-green);color:var(--brand-green);}
+  /* Aviso de problema com o salvamento/leitura dos status das máquinas (nunca falhar em silêncio) */
+  .pd-banner{display:none;align-items:flex-start;gap:12px;margin:0 0 20px;padding:11px 14px;border-radius:10px;font-size:12.5px;line-height:1.55;
+    border:1px solid var(--border);background:var(--card-2);color:var(--text);}
+  .pd-banner.warn{border-color:rgba(249,115,22,.55);background:rgba(249,115,22,.09);}
+  .pd-banner.error{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.11);}
+  .pd-banner-icon{flex:none;font-size:15px;line-height:1.35;}
+  .pd-banner-text{flex:1;min-width:0;}
+  .pd-banner-text b{font-weight:700;}
+  .pd-banner-actions{display:flex;gap:8px;align-items:center;flex:none;}
+  .pd-banner-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:15px;line-height:1;padding:3px 5px;}
+  .pd-banner-close:hover{color:var(--text);}
   .pd-machine-status{border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;}
   .pd-machine-status-active{background:rgba(94,234,212,.08);border:1px solid rgba(94,234,212,.35);color:var(--text);}
   .pd-machine-status-idle{background:var(--card-2);border:1px solid var(--border);}
@@ -474,7 +486,7 @@
     <div class="pd-header-controls">
       <div class="pd-control" style="padding:5px 10px;">
         <div class="pd-control-label" style="font-size:9px;">Versão do script</div>
-        <div style="font-family:var(--font-num);font-size:11px;font-weight:700;color:var(--text-dim);">2026-07-30.1</div>
+        <div style="font-family:var(--font-num);font-size:11px;font-weight:700;color:var(--text-dim);">2026-10-19.1</div>
       </div>
       <div class="pd-control pd-updated">
         <div class="pd-control-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Dados extraídos em</div>
@@ -517,6 +529,8 @@
     </div>
     <button class="pd-btn pd-btn-ghost" id="pd-gfilter-clear" style="align-self:flex-end;padding:9px 14px;">Limpar filtros</button>
   </div>
+
+  <div class="pd-banner" id="pd-status-banner" role="alert" style="display:none;"></div>
 
   <div class="pd-body">
     <div class="pd-main">
@@ -743,6 +757,12 @@
             <div class="pd-lz-value" id="pd-limpeza-pecas-distintas">0</div>
             <div class="pd-lz-unit">ferramentas passaram pela limpeza</div>
           </div>
+          <div class="pd-lz-card" style="--lz-glow:rgba(45,212,191,.22);cursor:pointer;" id="pd-limpeza-operadores-card" data-no-drill="1" title="Clique pra ver quem são os operadores">
+            <div class="pd-lz-icon" style="background:rgba(45,212,191,.14);color:#2dd4bf;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.5-6 5.5-6s5.5 2.7 5.5 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14.2c2.4.2 4 2.3 4 5.2"/></svg></div>
+            <div class="pd-lz-label">Operadores ativos</div>
+            <div class="pd-lz-value" id="pd-limpeza-operadores-ativos">0</div>
+            <div class="pd-lz-unit">limparam peças no período · clique pra ver quem</div>
+          </div>
         </div>
         <div class="pd-lz-costs-label">Custos</div>
         <div class="pd-lz-hero-costs">
@@ -936,7 +956,13 @@ function statusKey(day, machine, bucket){ return day+'_'+machine+'_'+bucket; }
 function statusAbbrev(s){ return STATUS_ABBREV[s] || (s ? s.charAt(0).toUpperCase() : '?'); }
 function buildStatusMap(rawArr){
   var map = {};
-  (rawArr||[]).forEach(function(r){ map[statusKey(r[0], r[1], r[2])] = { status:r[3], obs:r[4]||'' }; });
+  // A ÚLTIMA linha de cada célula vence (mesma convenção do backend, que atualiza a última). Linha com
+  // status vazio = "sem status": apaga a chave em vez de guardar {status:''}, que o mapa de calor
+  // desenharia como um "?" fantasma.
+  (rawArr||[]).forEach(function(r){
+    var k = statusKey(r[0], r[1], r[2]);
+    if(!r[3]) delete map[k]; else map[k] = { status:r[3], obs:r[4]||'' };
+  });
   return map;
 }
 function firstDayOfMonthDoy(doy){
@@ -1475,6 +1501,91 @@ function saveMachineStatusRemote(day, machine, bucket, status, obs){
   });
 }
 
+/* ---------- Status das máquinas: nunca falhar em silêncio ----------
+ * Contexto: um bug de fuso no Code.gs fazia cada status gravado voltar UM DIA ANTES depois de recarregar
+ * a página. Passou meses sem ninguém ver porque o dashboard confiava só na própria memória (STATUS_MAP)
+ * e nunca conferia o que a planilha devolvia. Daqui pra baixo: (1) aviso visível quando o status não
+ * carrega, (2) conferência por releitura logo depois de gravar/remover, (3) o botão atualizar também
+ * recarrega os status (antes só o F5 trazia marcas de outras pessoas). */
+var STATUS_BANNER_SOURCE = null; // quem mostrou o aviso: 'load' (não carregou) ou 'verify' (a releitura não bate)
+function escStatusHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showStatusBanner(source, kind, html, withRetry){
+  var el = document.getElementById('pd-status-banner'); if(!el) return;
+  STATUS_BANNER_SOURCE = source;
+  el.className = 'pd-banner ' + kind;
+  el.style.display = 'flex';
+  el.innerHTML = '<div class="pd-banner-icon">'+(kind==='error'?'⛔':'⚠️')+'</div>'+
+    '<div class="pd-banner-text">'+html+'</div>'+
+    '<div class="pd-banner-actions">'+(withRetry?'<button type="button" class="pd-btn-mini pd-banner-retry">Tentar de novo</button>':'')+
+    '<button type="button" class="pd-banner-close" title="Fechar aviso" aria-label="Fechar aviso">✕</button></div>';
+}
+/** Esconde o aviso. Com `source`, só esconde se foi ESSA origem que o mostrou -- assim um "atualizar"
+ * que deu certo não apaga o aviso de uma gravação que não bateu. */
+function hideStatusBanner(source){
+  var el = document.getElementById('pd-status-banner'); if(!el) return;
+  if(source && STATUS_BANNER_SOURCE !== source) return;
+  STATUS_BANNER_SOURCE = null;
+  el.style.display = 'none';
+  el.innerHTML = '';
+}
+/** Busca os status na planilha e aplica. Falha (rede, timeout, erro do servidor) NÃO apaga o que já está
+ * na tela -- só avisa. Devolve Promise<boolean> (true = aplicou). */
+function loadStatusMap(){
+  return fetchStatusMapFromWebApp().then(function(arr){
+    if(arr === null){
+      showStatusBanner('load', 'warn', '<b>Os status das máquinas (manutenção, sem operador…) não carregaram da planilha.</b> '+
+        'As marcas podem estar faltando nesta tela — isso não significa que foram perdidas. Tente de novo ou use o botão atualizar.', true);
+      return false;
+    }
+    STATUS_MAP = buildStatusMap(arr);
+    hideStatusBanner('load');
+    renderAll();
+    return true;
+  });
+}
+/** Relê os status da planilha e confere se as células que ACABARAM de ser gravadas (ou removidas) voltam
+ * como o dashboard acredita. expected: [{day, machine, bucket, status}] -- status null = tem que ter sumido.
+ * Resolve {state:'ok'|'mismatch'|'unreachable', bad, server}. */
+function verifyStatusSaved(expected){
+  return fetchStatusMapFromWebApp().then(function(arr){
+    if(arr === null) return { state:'unreachable' };
+    var server = buildStatusMap(arr);
+    var bad = expected.filter(function(e){
+      var s = server[statusKey(e.day, e.machine, e.bucket)];
+      return e.status === null ? !!s : !(s && s.status === e.status);
+    });
+    return { state: bad.length ? 'mismatch' : 'ok', bad: bad, server: server };
+  });
+}
+function describeStatusMismatch(e, server){
+  var label = 'INJ '+e.machine+' · '+doyToStr(e.day)+' · '+(e.bucket==='N'?'Noturno':'Diurno');
+  if(e.status === null) return label+': devia ter sido removido, mas ainda aparece';
+  var back = server[statusKey(e.day, e.machine, e.bucket)];
+  if(back) return label+': voltou como "'+escStatusHtml(back.status)+'" em vez de "'+escStatusHtml(e.status)+'"';
+  var before = server[statusKey(e.day-1, e.machine, e.bucket)];
+  if(before && before.status === e.status) return label+': voltou UM DIA ANTES ('+doyToStr(e.day-1)+')';
+  return label+': não voltou na releitura';
+}
+/** Aplica o resultado da conferência: ok -> adota o que a planilha devolve (é a verdade, inclui marcas de
+ * outras pessoas); mismatch/unreachable -> mantém a tela como está e mostra o aviso. */
+function finishStatusVerification(res){
+  if(res.state === 'ok'){
+    STATUS_MAP = res.server;
+    hideStatusBanner('verify');
+    renderAll();
+  } else if(res.state === 'mismatch'){
+    var lista = res.bad.slice(0,3).map(function(e){ return describeStatusMismatch(e, res.server); }).join('; ') +
+      (res.bad.length > 3 ? ' (+'+(res.bad.length-3)+' outras)' : '');
+    showStatusBanner('verify', 'error', '<b>Gravei na planilha, mas ao reler os status eles NÃO voltaram como gravei</b> ('+lista+'). '+
+      'Quase sempre é o <b>Code.gs implantado desatualizado</b>: cole a versão nova no editor e use '+
+      '<b>Implantar → Gerenciar implantações → lápis → Nova versão → Implantar</b>. '+
+      'Até lá, esta marca só vale nesta tela e some ao recarregar a página.', false);
+  } else {
+    showStatusBanner('verify', 'warn', '<b>Salvei, mas não consegui conferir</b> relendo a planilha (sem resposta do servidor). '+
+      'Atualize a página e confira se a marca continua lá.', false);
+  }
+}
+
 /** Modal pra registrar (ou editar) por que uma injetora não teve apontamento naquele dia/turno. */
 /** Verifica se um dia+máquina+turno já tem QUALQUER apontamento real (produção de verdade, não status registrado). */
 function hasApontamento(day, machine, bucket){
@@ -1578,6 +1689,7 @@ function openStatusModal(day, machine, bucket){
     var obs = document.getElementById('pd-status-obs').value;
     var btn = document.getElementById('pd-status-save-btn');
     btn.disabled = true;
+    var catSalva = selectedCat; // fixa a categoria do clique: trocar o botão no meio de um lote não pode misturar status
 
     // Só "Manutenção" propaga pra frente -- os outros status (Parada não planejada, Sem operador,
     // Outro) continuam batendo só no dia clicado, porque não dá pra presumir que a MESMA causa
@@ -1587,17 +1699,28 @@ function openStatusModal(day, machine, bucket){
     var i = 0;
     function salvarProximo(){
       if(i >= total){
-        msgEl.textContent = total > 1 ? ('Salvo! ('+total+' dias)') : 'Salvo!';
+        var baseMsg = total > 1 ? ('Salvo! ('+total+' dias)') : 'Salvo!';
+        msgEl.textContent = baseMsg + ' Conferindo na planilha...';
         msgEl.style.color = 'var(--green)';
-        btn.disabled = false;
         renderAll();
+        // Relê a planilha: o que acabou de ser gravado tem que voltar no MESMO dia e status. Se não
+        // voltar, o aviso no topo explica (antes o dashboard só confiava na própria memória).
+        verifyStatusSaved(diasParaSalvar.map(function(dd){ return { day:dd, machine:machine, bucket:bucket, status:catSalva }; })).then(function(res){
+          finishStatusVerification(res);
+          btn.disabled = false;
+          var m2 = document.getElementById('pd-status-msg');
+          if(!m2 || m2 !== msgEl) return; // modal fechado ou reaberto enquanto conferia
+          if(res.state === 'ok'){ m2.textContent = baseMsg + ' Conferido na planilha ✓'; m2.style.color = 'var(--green)'; }
+          else if(res.state === 'mismatch'){ m2.textContent = baseMsg + ' Mas a releitura da planilha NÃO bate — veja o aviso no topo.'; m2.style.color = 'var(--red)'; }
+          else { m2.textContent = baseMsg + ' Não consegui conferir na planilha (sem resposta).'; m2.style.color = 'var(--orange)'; }
+        });
         return;
       }
       var d = diasParaSalvar[i];
       msgEl.textContent = total > 1 ? ('Salvando... ('+(i+1)+'/'+total+')') : 'Salvando...';
       msgEl.style.color = 'var(--text-faint)';
-      saveMachineStatusRemote(d, machine, bucket, selectedCat, obs).then(function(){
-        STATUS_MAP[statusKey(d, machine, bucket)] = { status: selectedCat, obs: obs };
+      saveMachineStatusRemote(d, machine, bucket, catSalva, obs).then(function(){
+        STATUS_MAP[statusKey(d, machine, bucket)] = { status: catSalva, obs: obs };
         i++;
         salvarProximo();
       }).catch(function(err){
@@ -1696,10 +1819,15 @@ function openMachineModal(m){
         btn.textContent = 'Removendo (turno N)...';
         return saveMachineStatusRemote(mActive.startDay, m, 'N', '', '');
       }).then(function(){
-        STATUS_MAP[statusKey(mActive.startDay, m, 'D')] = {status:'', obs:''};
-        STATUS_MAP[statusKey(mActive.startDay, m, 'N')] = {status:'', obs:''};
+        // delete (e não {status:''}): uma entrada com status vazio viraria um "?" fantasma no mapa de calor
+        delete STATUS_MAP[statusKey(mActive.startDay, m, 'D')];
+        delete STATUS_MAP[statusKey(mActive.startDay, m, 'N')];
         renderAll();
         openMachineModal(m);
+        verifyStatusSaved([
+          { day:mActive.startDay, machine:m, bucket:'D', status:null },
+          { day:mActive.startDay, machine:m, bucket:'N', status:null }
+        ]).then(finishStatusVerification);
       }).catch(function(err){
         btn.disabled = false; btn.textContent = 'Remover';
         alert('Erro ao remover: '+err.message);
@@ -1734,6 +1862,10 @@ function openMachineModal(m){
         STATUS_MAP[statusKey(startDay, m, 'N')] = {status:fullStatus, obs:obs};
         renderAll();
         openMachineModal(m);
+        verifyStatusSaved([
+          { day:startDay, machine:m, bucket:'D', status:fullStatus },
+          { day:startDay, machine:m, bucket:'N', status:fullStatus }
+        ]).then(finishStatusVerification);
       }).catch(function(err){
         msgEl.textContent = 'Erro: '+err.message; msgEl.style.color = 'var(--red)';
       });
@@ -2859,7 +2991,7 @@ function openMaoDeObraModal(){
     '<div class="pd-modal-sub">Recorte atual: '+doyToStr(STATE.startDoy)+' a '+doyToStr(STATE.endDoy)+' com os filtros de cima aplicados</div></div>'+
     '<button class="pd-modal-close" id="pd-modal-close-btn">✕</button></div>'+
     '<div class="pd-modal-stats">'+
-    '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Operadores considerados</div><div class="pd-modal-stat-value">'+comCusto.length+(resumo.length>comCusto.length ? '<span class="pd-stat-of"> ('+(resumo.length-comCusto.length)+' sem custo)</span>' : '')+'</div></div>'+
+    '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Operadores considerados</div><div class="pd-modal-stat-value">'+resumo.length+(resumo.length>comCusto.length ? '<span class="pd-stat-of"> ('+(resumo.length-comCusto.length)+' sem custo)</span>' : '')+'</div></div>'+
     '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Custo diário-base usado</div><div class="pd-modal-stat-value" style="font-size:18px;">'+fmtCurrency(custoDiario)+'</div></div>'+
     '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Total de dia-operador</div><div class="pd-modal-stat-value">'+totalDiasOperador+'</div></div>'+
     '<div class="pd-modal-stat"><div class="pd-modal-stat-label">Soma geral</div><div class="pd-modal-stat-value" style="color:#ec4899;">'+fmtCurrency(totalGeral)+'</div></div>'+
@@ -2892,11 +3024,15 @@ function renderLimpeza(){
   var totalRefugo = filtered.reduce(function(a,r){ return a+(r[5]||0); }, 0);
   var pctRefugo = (totalRefugo+totalLimpa)>0 ? totalRefugo/(totalRefugo+totalLimpa)*100 : null;
   var pecasDistintas = new Set(filtered.map(function(r){return r[4];}).filter(Boolean)).size;
+  // Operadores distintos no recorte (nome, ou "Crachá N" quando o VLOOKUP do nome não achou o crachá --
+  // por isso crachá não cadastrado conta como uma "pessoa" à parte). Linha sem operador não conta.
+  var operadoresDistintos = new Set(filtered.map(function(r){return r[3];}).filter(Boolean)).size;
 
   animateCounter(document.getElementById('pd-limpeza-total-limpa'), totalLimpa, fmtInt);
   animateCounter(document.getElementById('pd-limpeza-total-refugo'), totalRefugo, fmtInt);
   animateCounter(document.getElementById('pd-limpeza-pct-refugo'), pctRefugo, function(v){ return fmtPct(v,1); });
   animateCounter(document.getElementById('pd-limpeza-pecas-distintas'), pecasDistintas, function(v){ return Math.round(v); });
+  animateCounter(document.getElementById('pd-limpeza-operadores-ativos'), operadoresDistintos, function(v){ return Math.round(v); });
 
   // Custo de limpeza (coluna J, "Preço de limpeza" -- por peça, já vem multiplicado em custoTotal
   // desde o Code.gs). Linhas de ANTES da coluna existir não têm custoTotal (fica null) -- soma só
@@ -2924,8 +3060,11 @@ function renderLimpeza(){
   var maoObraEl = document.getElementById('pd-limpeza-custo-mao-obra');
   var maoObraUnitEl = document.getElementById('pd-limpeza-custo-mao-obra-unit');
   animateCounter(maoObraEl, operadoresComCusto.length===0 ? null : totalMaoDeObra, fmtCurrency);
-  maoObraUnitEl.textContent = operadoresComCusto.length===0 ? 'sem operador identificado nesse período'
-    : (operadoresComCusto.length+' operador'+(operadoresComCusto.length!==1?'es':'')+' no período · clique pra ver quem');
+  // Conta TODOS os operadores do recorte (a mesma conta do card "Operadores ativos"); os que não têm
+  // custo calculável (sem dia/quantidade) aparecem entre parênteses em vez de sumirem da contagem.
+  var nOps = resumoOperadores.length, nOpsCusto = operadoresComCusto.length;
+  maoObraUnitEl.textContent = nOps===0 ? 'sem operador identificado nesse período'
+    : (nOps+' operador'+(nOps!==1?'es':'')+(nOps>nOpsCusto ? ' ('+(nOps-nOpsCusto)+' sem custo)' : '')+' no período · clique pra ver quem');
 
   var byDay = {};
   filtered.forEach(function(r){
@@ -3176,6 +3315,7 @@ document.getElementById('pd-limpeza-detail-toggle').addEventListener('click', fu
 });
 document.querySelector('.pd-lz-hero').addEventListener('click', function(e){
   if(!e.target.closest('.pd-lz-card')) return;
+  if(e.target.closest('.pd-lz-card[data-no-drill]')) return; // esse card abre o próprio modal, não a tabela
   STATE.limpezaDrill = null; // clicar num card do topo mostra TUDO no detalhe, sem recorte de ranking
   renderLimpeza();
   openTechDetailTable('pd-limpeza-detail-wrap', 'pd-limpeza-detail-toggle');
@@ -3192,6 +3332,7 @@ document.getElementById('pd-limpeza-drill-chip').addEventListener('click', funct
   renderLimpeza();
 });
 document.getElementById('pd-limpeza-mao-obra-card').addEventListener('click', openMaoDeObraModal);
+document.getElementById('pd-limpeza-operadores-card').addEventListener('click', openMaoDeObraModal);
 document.getElementById('pd-limpeza-table').addEventListener('click', function(e){
   var th = e.target.closest('th[data-k]'); if(!th) return;
   var k = th.dataset.k;
@@ -3407,8 +3548,11 @@ function fetchRowsFromWebApp(){
 /**
  * Busca o status das máquinas (manutenção/parada/sem operador/outro) via JSONP. Diferente de
  * fetchRowsFromWebApp, NUNCA rejeita -- status é um extra (pra colorir células vazias), não algo
- * essencial pra ver o dashboard, então se der erro ou demorar demais, resolve com [] em vez de
- * travar o carregamento do resto.
+ * essencial pra ver o dashboard, então se der erro ou demorar demais não trava o carregamento do resto.
+ *
+ * Resolve com um ARRAY quando a leitura deu certo (inclusive [] = ninguém registrou status ainda) e com
+ * null quando FALHOU (rede, timeout, erro do servidor). A diferença importa: antes as duas coisas
+ * viravam [], e uma falha apagava todas as marcas da tela sem avisar ninguém.
  */
 function fetchStatusMapFromWebApp(){
   return new Promise(function(resolve){
@@ -3420,9 +3564,9 @@ function fetchStatusMapFromWebApp(){
       if(script.parentNode) script.parentNode.removeChild(script);
       clearTimeout(timeoutId);
     }
-    window[callbackName] = function(data){ cleanup(); resolve(Array.isArray(data) ? data : []); };
-    timeoutId = setTimeout(function(){ cleanup(); resolve([]); }, 20000);
-    script.onerror = function(){ cleanup(); resolve([]); };
+    window[callbackName] = function(data){ cleanup(); resolve(Array.isArray(data) ? data : null); };
+    timeoutId = setTimeout(function(){ cleanup(); resolve(null); }, 20000);
+    script.onerror = function(){ cleanup(); resolve(null); };
     var sep = WEBAPP_URL.indexOf('?')===-1 ? '?' : '&';
     script.src = WEBAPP_URL + sep + 'format=status&callback=' + callbackName;
     document.head.appendChild(script);
@@ -3463,6 +3607,7 @@ document.getElementById('pd-refresh-btn').addEventListener('click', function(){
       document.getElementById('pd-date-end').max = doyToISO(LATEST_DOY);
       populateGlobalFilterOptions();
       renderAll();
+      loadStatusMap(); // antes só o F5 trazia marcas de status gravadas por outras pessoas
       fetchLimpezaFromWebApp().then(function(limpezaArr){ LIMPEZA_ROWS = limpezaArr; if(STATE.activeView==='limpeza') renderLimpeza(); });
       var now=new Date(); var p=function(n){return String(n).padStart(2,'0');};
       document.getElementById('pd-updated-value').textContent = 'atualizado '+p(now.getDate())+'/'+p(now.getMonth()+1)+' '+p(now.getHours())+':'+p(now.getMinutes());
@@ -3474,6 +3619,11 @@ document.getElementById('pd-refresh-btn').addEventListener('click', function(){
       btn.disabled = false;
       if(svg) svg.style.animation = '';
     });
+});
+
+document.getElementById('pd-status-banner').addEventListener('click', function(e){
+  if(e.target.closest('.pd-banner-close')){ hideStatusBanner(); return; }
+  if(e.target.closest('.pd-banner-retry')){ loadStatusMap(); }
 });
 
 function doyToISO(doy){ var d=new Date(DATE_BASE+doy*86400000); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
@@ -3521,10 +3671,7 @@ if(!WEBAPP_URL || WEBAPP_URL.indexOf('COLE_AQUI') !== -1){
     // Status é um extra (colore células vazias) -- carrega em paralelo, DEPOIS de já ter mostrado
     // o dashboard com os dados principais. Se demorar ou falhar, o dashboard já está usável do
     // mesmo jeito; só re-renderiza quando (e se) o status chegar.
-    fetchStatusMapFromWebApp().then(function(statusArr){
-      STATUS_MAP = buildStatusMap(statusArr);
-      renderAll();
-    });
+    loadStatusMap();
     fetchLimpezaFromWebApp().then(function(limpezaArr){
       LIMPEZA_ROWS = limpezaArr;
       if(STATE.activeView==='limpeza') renderLimpeza();
