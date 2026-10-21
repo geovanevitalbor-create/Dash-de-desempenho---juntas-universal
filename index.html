@@ -607,30 +607,87 @@
   .pd-filterbar > .pd-control{flex:1 1 120px;min-width:120px;}
   .pd-filterbar > .pd-control.pd-fper{flex:1.6 1 236px;}
 
-  /* cadastro de máquina pelo dashboard */
-  .pd-cad-form{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:12px;align-items:end;}
-  .pd-cad-f{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-faint);}
+  /* cadastro de máquina: janela (abre pelo "+" ou clicando numa máquina) */
+  .pd-shead.pd-shead-add{flex-wrap:nowrap;}
+  .pd-shead.pd-shead-add > div{min-width:0;}
+  .pd-cad-add{width:44px;height:44px;flex-shrink:0;display:grid;place-items:center;border-radius:12px;border:1px solid #15803d;background:#15803d;color:#fff;
+    font:500 27px/1 var(--font-ui);padding:0 0 3px;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s;}
+  .pd-cad-add:hover{background:#16a34a;box-shadow:0 0 0 4px rgba(34,197,94,.16);transform:translateY(-1px);}
+  .pd-cad-add:focus-visible, .pd-cad-edit-ico:focus-visible, .pd-avisos-btn:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;}
+  .pd-cad-table td.pd-cad-edit-td{width:44px;padding-top:4px;padding-bottom:4px;text-align:right;}
+  .pd-cad-edit-ico{width:36px;height:36px;display:inline-grid;place-items:center;border-radius:9px;border:1px solid transparent;background:none;color:var(--text-faint);cursor:pointer;}
+  .pd-cad-edit-ico svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .pd-cad-table tr.pd-row-click:hover .pd-cad-edit-ico, .pd-cad-edit-ico:hover{color:var(--accent-text);border-color:var(--border-2);}
+  .pd-table tr.pd-row-flash td{animation:pdRowFlash 2.6s ease-out 1;}
+  @keyframes pdRowFlash{0%{background:rgba(34,197,94,.30);}100%{background:transparent;}}
+  .pd-cad-modal{max-width:620px;}
+  .pd-cad-mtitle{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .pd-cad-form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px 12px;align-items:start;}
+  .pd-cad-f{grid-column:span 2;display:flex;flex-direction:column;gap:6px;min-width:0;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-faint);}
+  .pd-cad-f.pd-cad-f-data{grid-column:span 3;}
   .pd-cad-f em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;}
   .pd-cad-f .pd-config-input{width:100%;min-height:44px;text-align:left;font-family:var(--font-ui);font-size:13px;}
   .pd-cad-f .pd-config-input[type=number]{font-family:var(--font-num);}
   .pd-cad-f .pd-config-input[readonly]{opacity:.7;cursor:not-allowed;}
-  .pd-cad-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .pd-cad-hint{display:block;font-size:11px;color:var(--text-faint);}
+  .pd-cad-msg{grid-column:1 / -1;font-size:12.5px;line-height:1.5;color:var(--text-dim);}
+  .pd-cad-msg:empty{display:none;}
+  .pd-cad-msg.ok{color:#86efac;} .pd-cad-msg.erro{color:#fca5a5;} .pd-cad-msg.aviso{color:#fcd34d;}
+  .pd-cad-actions{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;padding-top:14px;border-top:1px solid var(--border);}
+  .pd-cad-sp{flex:1;}
   .pd-cad-excluir{color:#fca5a5;border-color:rgba(220,38,38,.45);}
   .pd-cad-excluir:hover{color:#fecaca;border-color:#ef4444;}
   .pd-cad-excluir.pd-armado{background:#b91c1c;border-color:#b91c1c;color:#fff;}
-  .pd-cad-msg{margin-top:12px;font-size:12.5px;line-height:1.5;color:var(--text-dim);min-height:18px;}
-  .pd-cad-msg.ok{color:#86efac;} .pd-cad-msg.erro{color:#fca5a5;} .pd-cad-msg.aviso{color:#fcd34d;}
-  .pd-aviso .pd-aviso-btn{margin-top:8px;min-height:36px;padding:6px 12px;border-radius:8px;border:1px solid rgba(251,191,36,.5);background:rgba(251,191,36,.12);
-    color:#fde68a;font:700 12px var(--font-ui);cursor:pointer;margin-right:8px;}
-  .pd-aviso .pd-aviso-btn:hover{border-color:#fbbf24;}
-  .pd-aviso[hidden]{display:none;}
-  .pd-avisos-lista{display:flex;flex-direction:column;gap:10px;}
-  .pd-aviso .pd-aviso-btn.pd-aviso-x{background:transparent;border-color:transparent;color:#d6c38a;font-weight:600;text-decoration:underline;text-underline-offset:3px;}
-  .pd-aviso .pd-aviso-btn.pd-aviso-x:hover{color:#fde68a;border-color:transparent;}
-  .pd-avisos-ign{font-size:11.5px;color:var(--text-faint);}
+  .pd-modal-close:disabled{opacity:.45;cursor:progress;}
+  .pd-avisos-ign{margin-top:4px;font-size:11.5px;color:var(--text-faint);}
   .pd-link{background:none;border:none;padding:0;color:var(--accent-text);font:600 11.5px var(--font-ui);cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
-  .pd-avisos-lista:empty{display:none;}
-  @media (max-width:1240px){ .pd-cad-form{grid-template-columns:repeat(3,minmax(0,1fr));} .pd-cad-actions{grid-column:1 / -1;} }
+
+  /* confirmação rápida (salvou / excluiu) */
+  .pd-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:400;max-width:min(560px,calc(100vw - 32px));padding:12px 16px;border-radius:12px;
+    background:#0f2418;border:1px solid rgba(34,197,94,.5);color:#bbf7d0;font:600 13px/1.45 var(--font-ui);box-shadow:0 14px 36px rgba(0,0,0,.5);}
+  .pd-toast[hidden]{display:none;}
+  .pd-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;}
+
+  /* avisos da frota: minimizados num indicador do topo; a lista só abre ao clicar */
+  .pd-avisos-wrap{position:relative;}
+  .pd-avisos-wrap[hidden]{display:none;}
+  .pd-avisos-btn{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 12px;border-radius:10px;border:1px solid rgba(251,191,36,.42);
+    background:rgba(251,191,36,.07);color:#fcd34d;font:700 12px var(--font-ui);cursor:pointer;white-space:nowrap;}
+  .pd-avisos-btn:hover, .pd-avisos-btn[aria-expanded="true"]{border-color:#fbbf24;background:rgba(251,191,36,.13);}
+  .pd-avisos-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .pd-avisos-n{font-family:var(--font-num);font-size:12.5px;}
+  .pd-avisos-lbl{font-weight:600;color:#e7d7a3;}
+  .pd-avisos-painel{position:absolute;top:calc(100% + 8px);right:0;z-index:70;width:min(460px,calc(100vw - 32px));max-height:min(70vh,560px);overflow:auto;
+    padding:8px;border-radius:14px;border:1px solid var(--border-2);background:#101712;box-shadow:0 18px 48px rgba(0,0,0,.55);}
+  .pd-avisos-painel[hidden]{display:none;}
+  .pd-avp-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 4px 10px 8px;font-size:10.5px;font-weight:800;letter-spacing:.9px;
+    text-transform:uppercase;color:#fcd34d;}
+  .pd-avp-item{display:flex;gap:10px;padding:12px;border-radius:10px;background:rgba(251,191,36,.045);border:1px solid rgba(251,191,36,.18);}
+  .pd-avp-item + .pd-avp-item{margin-top:8px;}
+  .pd-avp-dot{width:8px;height:8px;border-radius:50%;background:#fbbf24;margin-top:6px;flex-shrink:0;}
+  .pd-avp-body{min-width:0;}
+  .pd-avp-t{font-size:13px;font-weight:700;color:var(--text);}
+  .pd-avp-d{font-size:12px;line-height:1.5;color:var(--text-dim);margin-top:3px;}
+  .pd-avp-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+  .pd-avp-btn{min-height:36px;padding:6px 12px;border-radius:8px;border:1px solid rgba(251,191,36,.5);background:rgba(251,191,36,.12);color:#fde68a;font:700 12px var(--font-ui);cursor:pointer;}
+  .pd-avp-btn:hover{border-color:#fbbf24;}
+  .pd-avp-ign{min-height:36px;padding:6px 8px;border:none;background:none;color:var(--text-faint);font:600 12px var(--font-ui);cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+  .pd-avp-ign:hover{color:var(--text-dim);}
+  .pd-avp-foot{padding:10px 8px 4px;font-size:11.5px;color:var(--text-faint);}
+  @media (max-width:1180px){ .pd-avisos-lbl{display:none;} .pd-avisos-btn{padding:0 11px;} }
+  @media (max-width:900px){ .pd-chip-ver{display:none;} } /* tablet: a versão sai do topo (no celular os dois chips já saem) */ /* sem a palavra "avisos": o topo não quebra em duas linhas */
+
+  /* explicação recolhida ("Como esta página conta") */
+  .pd-dica > summary{list-style:none;display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:2px 4px;border-radius:8px;cursor:pointer;
+    font-size:12px;font-weight:600;color:var(--text-faint);}
+  .pd-dica > summary::-webkit-details-marker{display:none;}
+  .pd-dica > summary:hover{color:var(--text-dim);}
+  .pd-dica > summary:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;}
+  .pd-dica > summary svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+  .pd-dica > summary::after{content:'';width:6px;height:6px;margin-left:2px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s;}
+  .pd-dica[open] > summary::after{transform:rotate(-135deg) translateY(-1px);}
+  .pd-dica[open]{padding:4px 12px 12px;border-radius:12px;border:1px solid rgba(37,99,235,.3);background:rgba(37,99,235,.06);}
+  .pd-dica-txt{padding:4px 2px 0 26px;font-size:12.5px;line-height:1.55;color:#cfe0ff;}
 
   /* ===================== celular ===================== */
   @media (max-width:760px){
@@ -668,7 +725,13 @@
     #pd-heatmap-help{display:none;}
     .pd-scrollbox{max-height:480px;}
     .pd-cad-form{grid-template-columns:1fr 1fr;}
-    .pd-cad-f:first-child{grid-column:1 / -1;}
+    .pd-cad-f{grid-column:span 1;}
+    .pd-cad-f.pd-cad-f-id, .pd-cad-f.pd-cad-f-data{grid-column:1 / -1;}
+    .pd-cad-sp{display:none;}
+    .pd-cad-actions .pd-btn{flex:1 1 auto;}
+    .pd-avisos-lbl{display:none;}
+    .pd-avisos-btn{padding:0 11px;}
+    .pd-avisos-painel{position:fixed;top:72px;left:12px;right:12px;width:auto;max-height:calc(100vh - 88px);}
     .pd-kcard{min-height:0;padding:12px 10px 12px 15px;gap:4px;}
     .pd-kgrid > .pd-kcard:last-child:nth-child(odd){grid-column:span 2;}
     .pd-klbl{font-size:9.5px;letter-spacing:.6px;}
@@ -714,7 +777,11 @@
       <div class="pd-tsub">Fab II · injetoras · formulário RQ 030/076</div>
     </div>
     <div class="pd-tright">
-      <div class="pd-chip"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-10-21.3</span></div>
+      <div class="pd-avisos-wrap" id="pd-avisos-wrap" hidden>
+        <button class="pd-avisos-btn" id="pd-avisos-btn" type="button" aria-expanded="false" aria-controls="pd-avisos-painel" aria-label="Avisos sobre a frota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 21.5 20h-19L12 3.5z"/><path d="M12 10v4.5M12 17.2h.01"/></svg><span class="pd-avisos-n" id="pd-avisos-n">0</span><span class="pd-avisos-lbl" id="pd-avisos-lbl">avisos</span></button>
+        <div class="pd-avisos-painel" id="pd-avisos-painel" role="region" aria-label="Avisos da frota" hidden></div>
+      </div>
+      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-10-21.4</span></div>
       <div class="pd-chip"><span class="pd-chip-k">Dados extraídos em</span><span class="pd-chip-v" id="pd-updated-value">—</span></div>
       <button class="pd-ibtn" id="pd-refresh-btn" type="button" title="Buscar dados novos da planilha" aria-label="Atualizar dados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg></button>
       <button class="pd-tmob" id="pd-mob-menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
@@ -858,7 +925,6 @@
       </div>
 
       <div class="pd-banner" id="pd-status-banner" role="alert" style="display:none;"></div>
-      <div class="pd-aviso pd-aviso-warn" id="pd-frota-alerta" role="alert" hidden></div>
 
       <div class="pd-body">
         <div class="pd-main">
@@ -982,7 +1048,7 @@
               </div>
             </section>
             <div class="pd-kgrid pd-kgrid-5" id="pd-kpis-paradas" data-sub="paradas"></div>
-            <div class="pd-aviso" data-sub="paradas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><div>Cada marca salva num quadradinho "·" do mapa de calor aparece aqui, lida da planilha (aba Status Máquinas). Parada da máquina inteira vale até a máquina voltar a apontar. Clique num registro pra editar. As contagens acima usam os dias que tiveram produção, sem o dia em andamento.</div></div>
+            <details class="pd-dica" data-sub="paradas"><summary><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>Como esta página conta</summary><div class="pd-dica-txt">Cada marca salva num quadradinho "·" do mapa de calor aparece aqui, lida da planilha (aba Status Máquinas). Parada da máquina inteira vale até a máquina voltar a apontar. Clique num registro pra editar. As contagens acima usam os dias que tiveram produção, sem o dia em andamento.</div></details>
             <div class="pd-grid12" data-sub="paradas">
               <section class="pd-card pd-sp8">
                 <div class="pd-shead">
@@ -1010,37 +1076,17 @@
               <table class="pd-table" id="pd-maq-ferramentas-table"></table>
             </div>
           </div>
-            <div class="pd-avisos-lista" id="pd-cadastro-avisos" data-sub="cadastro"></div>
             <div class="pd-kgrid" id="pd-kpis-cadastro" data-sub="cadastro"></div>
-            <section class="pd-card" data-sub="cadastro" id="pd-cad-form-card">
-              <div class="pd-shead">
-                <div>
-                  <div class="pd-stitle"><span class="pd-sbar"></span><span class="pd-stag" id="pd-cad-tag">NOVA</span><span id="pd-cad-titulo">Cadastrar máquina</span></div>
-                  <div class="pd-ssub" id="pd-cad-sub">Grava direto na aba Maquinas. Entrada na frota = dia em que ela começou a produzir. Pra editar ou marcar a saída de uma máquina, clique nela na tabela.</div>
-                </div>
-              </div>
-              <form class="pd-cad-form" id="pd-cad-form" autocomplete="off" novalidate>
-                <label class="pd-cad-f"><span>ID da injetora</span><input class="pd-config-input" id="pd-cad-id" type="number" min="1" step="1" inputmode="numeric" placeholder="ex.: 304"></label>
-                <label class="pd-cad-f"><span>Fabricante</span><input class="pd-config-input" id="pd-cad-fab" type="text" maxlength="40" placeholder="ex.: DEKUMA"></label>
-                <label class="pd-cad-f"><span>Modelo</span><input class="pd-config-input" id="pd-cad-mod" type="text" maxlength="40" placeholder="ex.: DK-500"></label>
-                <label class="pd-cad-f"><span>Entrada na frota</span><input class="pd-config-input" id="pd-cad-ent" type="date"></label>
-                <label class="pd-cad-f"><span>Saída da frota <em>(só se saiu)</em></span><input class="pd-config-input" id="pd-cad-sai" type="date"></label>
-                <div class="pd-cad-actions">
-                  <button type="submit" class="pd-btn" id="pd-cad-salvar">Salvar na planilha</button>
-                  <button type="button" class="pd-btn pd-btn-ghost" id="pd-cad-novo">Nova máquina</button>
-                  <button type="button" class="pd-btn pd-btn-ghost pd-cad-excluir" id="pd-cad-excluir" hidden>Excluir</button>
-                </div>
-              </form>
-              <div class="pd-cad-msg" id="pd-cad-msg" role="status" aria-live="polite"></div>
-            </section>
             <section class="pd-card" data-sub="cadastro">
-              <div class="pd-shead">
+              <div class="pd-shead pd-shead-add">
                 <div>
                   <div class="pd-stitle"><span class="pd-sbar"></span><span class="pd-stag">ABA MAQUINAS</span><span>Injetoras cadastradas</span></div>
                   <div class="pd-ssub" id="pd-cadastro-fonte">—</div>
+                  <div class="pd-avisos-ign" id="pd-cadastro-ign" hidden></div>
                 </div>
+                <button type="button" class="pd-cad-add" id="pd-cad-add" title="Adicionar máquina" aria-label="Adicionar máquina">+</button>
               </div>
-              <div style="overflow-x:auto;"><table class="pd-table" id="pd-cadastro-table"></table></div>
+              <div style="overflow-x:auto;position:relative;"><table class="pd-table pd-cad-table" id="pd-cadastro-table"></table></div>
             </section>
           </div>
 
@@ -1336,6 +1382,34 @@
 <div class="pd-modal-overlay" id="pd-modal-overlay">
   <div class="pd-modal" id="pd-modal-content"></div>
 </div>
+
+<div class="pd-modal-overlay pd-cad-overlay" id="pd-cad-overlay">
+  <div class="pd-modal pd-cad-modal" role="dialog" aria-modal="true" aria-labelledby="pd-cad-titulo" aria-describedby="pd-cad-sub">
+    <div class="pd-modal-head">
+      <div>
+        <div class="pd-cad-mtitle"><span class="pd-stag" id="pd-cad-tag">NOVA</span><span class="pd-modal-title" id="pd-cad-titulo">Nova máquina</span></div>
+        <div class="pd-modal-sub" id="pd-cad-sub">Grava direto na aba Maquinas da planilha.</div>
+      </div>
+      <button class="pd-modal-close" id="pd-cad-fechar" type="button" aria-label="Fechar">✕</button>
+    </div>
+    <form class="pd-cad-form" id="pd-cad-form" autocomplete="off" novalidate>
+      <label class="pd-cad-f pd-cad-f-id"><span>ID da injetora</span><input class="pd-config-input" id="pd-cad-id" type="number" min="1" step="1" inputmode="numeric" placeholder="ex.: 304"></label>
+      <label class="pd-cad-f"><span>Fabricante</span><input class="pd-config-input" id="pd-cad-fab" type="text" maxlength="40" placeholder="ex.: DEKUMA"></label>
+      <label class="pd-cad-f"><span>Modelo</span><input class="pd-config-input" id="pd-cad-mod" type="text" maxlength="40" placeholder="ex.: DK-500"></label>
+      <label class="pd-cad-f pd-cad-f-data"><span>Entrada na frota</span><input class="pd-config-input" id="pd-cad-ent" type="date"><em class="pd-cad-hint">dia em que ela começou a produzir</em></label>
+      <label class="pd-cad-f pd-cad-f-data"><span>Saída da frota <em>(só se saiu)</em></span><input class="pd-config-input" id="pd-cad-sai" type="date"><em class="pd-cad-hint">em vez de apagar a linha da aba</em></label>
+      <div class="pd-cad-msg" id="pd-cad-msg" role="status" aria-live="polite"></div>
+      <div class="pd-cad-actions">
+        <button type="button" class="pd-btn pd-btn-ghost pd-cad-excluir" id="pd-cad-excluir" hidden>Excluir</button>
+        <span class="pd-cad-sp"></span>
+        <button type="button" class="pd-btn pd-btn-ghost" id="pd-cad-cancelar">Cancelar</button>
+        <button type="submit" class="pd-btn" id="pd-cad-salvar">Salvar na planilha</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="pd-toast" id="pd-toast" role="status" aria-live="polite" hidden></div>
 
 
 <script>
@@ -3029,62 +3103,101 @@ function renderParadas(){
  * vira aviso (só polui a tela). */
 var FORA_MIN_APONT = 3;
 function maquinasForaDaAba(){ return FLEET_FORA.filter(function(x){ return x.n >= FORA_MIN_APONT && !FLEET_META[x.id]; }); }
-function textoForaDaAba(lista){
-  var um = lista.length === 1;
-  var desc = lista.map(function(x){ return '<b>INJ '+x.id+'</b> — '+fmtInt(x.n)+' apontamentos'+(x.primeiro!=null ? ', de '+doyToFull(x.primeiro)+' a '+doyToFull(x.ultimo) : ''); }).join('; ');
-  return (um ? 'Esta injetora tem apontamentos na planilha mas não está' : 'Estas injetoras têm apontamentos na planilha mas não estão')+
-    ' na aba Maquinas, então '+(um ? 'o histórico dela fica' : 'o histórico delas fica')+' FORA de todas as contas do dashboard: '+desc+'. '+
-    'Se a linha foi apagada ou sobrescrita na aba, cadastre de volta; se a máquina saiu da fábrica, cadastre com a saída da frota.';
-}
-function botoesVolta(lista){ return lista.map(function(x){ return '<button type="button" class="pd-aviso-btn" data-cad-volta="'+x.id+'">Cadastrar a INJ '+x.id+' de volta</button>'; }).join(''); }
-// Avisos que a pessoa mandou ignorar (neste navegador): 'fora:213', 'semdata:304'... Somem do Cadastro e do topo.
+// Avisos que a pessoa mandou ignorar (neste navegador): 'fora:213', 'semdata:304'... Saem da contagem do topo.
 var AVISOS_KEY = 'pd.avisosIgnorados';
 function avisosIgnorados(){ try { var v = JSON.parse(window.localStorage.getItem(AVISOS_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
 function ignorarAviso(chave){ var v = avisosIgnorados(); if(v.indexOf(chave)===-1) v.push(chave); try { window.localStorage.setItem(AVISOS_KEY, JSON.stringify(v)); } catch(e){} }
 function reexibirAvisos(){ try { window.localStorage.removeItem(AVISOS_KEY); } catch(e){} }
 function ignorado(chave){ return avisosIgnorados().indexOf(chave)!==-1; }
-function botaoIgnorar(chave){ return '<button type="button" class="pd-aviso-btn pd-aviso-x" data-ignorar="'+chave+'" title="Esconder este aviso neste navegador">Ignorar</button>'; }
-var ICO_ALERTA = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>';
-/** Alerta no topo de todas as telas (menos no Cadastro, que mostra o mesmo aviso com mais detalhe). */
-function renderFrotaAlerta(){
-  var el = document.getElementById('pd-frota-alerta');
-  var lista = maquinasForaDaAba().filter(function(x){ return !ignorado('fora:'+x.id); });
-  if(!lista.length){ el.hidden = true; el.innerHTML = ''; return; }
-  el.innerHTML = ICO_ALERTA+'<div>'+textoForaDaAba(lista)+'<br>'+botoesVolta(lista)+lista.map(function(x){ return botaoIgnorar('fora:'+x.id); }).join('')+'</div>';
-  el.hidden = false;
+function hashTexto(t){ var h = 5381; t = String(t||''); for(var i=0;i<t.length;i++){ h = ((h<<5) + h + t.charCodeAt(i)) | 0; } return (h>>>0).toString(36); }
+
+/** Tudo o que merece atenção na frota, um item por assunto (cada um pode ser ignorado sozinho).
+ * Devolve {ativos:[{chave, titulo, texto (HTML), acoes (HTML)}], ignorados:n}. */
+function listarAvisos(){
+  var info = FLEET_INFO, ativos = [], nIgn = 0;
+  var add = function(a){ if(ignorado(a.chave)){ nIgn++; return; } ativos.push(a); };
+  if(info.fonte==='padrao'){
+    add({chave:'fonte:padrao', titulo:'Aba Maquinas não encontrada', acoes:'',
+      texto:'A planilha não tem a aba Maquinas (ou ela está sem nenhum ID válido): valem as '+FLEET.length+' injetoras fixas do código. O primeiro cadastro pelo + cria a aba.'});
+  } else if(info.fonte!=='aba'){
+    add({chave:'fonte:embutida', titulo:'Frota: lista padrão do dashboard', acoes:'',
+      texto:'O App da Web não respondeu à leitura da aba Maquinas, então valem as '+FLEET.length+' injetoras embutidas. Publique a nova versão do Code.gs (Implantar → Gerenciar implantações → lápis → Nova versão).'});
+  }
+  maquinasForaDaAba().forEach(function(x){
+    add({chave:'fora:'+x.id, titulo:'INJ '+x.id+' não está na aba Maquinas',
+      texto:fmtInt(x.n)+' apontamentos'+(x.primeiro!=null ? ' ('+doyToFull(x.primeiro)+' a '+doyToFull(x.ultimo)+')' : '')+' ficam fora de todas as contas. '+
+        'Se a linha foi apagada ou sobrescrita na aba, cadastre de volta; se a máquina saiu da fábrica, cadastre com a saída da frota.',
+      acoes:'<button type="button" class="pd-avp-btn" data-cad-volta="'+x.id+'">Cadastrar de volta</button>'});
+  });
+  if(info.fonte==='aba'){
+    var comApont = {}; ROWS.forEach(function(r){ comApont[r[1]] = true; });
+    FLEET.forEach(function(m){
+      if(FLEET_META[m].ent!==null || comApont[m]) return;
+      add({chave:'semdata:'+m, titulo:'INJ '+m+' sem data de entrada na frota',
+        texto:'Sem nenhum apontamento até agora, ela conta como parada em todos os dias desde o começo dos dados e puxa a eficiência do histórico pra baixo. '+
+          'Se é máquina nova, preencha a entrada com o dia em que ela começou a produzir.',
+        acoes:'<button type="button" class="pd-avp-btn" data-cad-edit="'+m+'">Preencher a entrada</button>'});
+    });
+  }
+  if((info.avisos||[]).length){
+    add({chave:'linhas:'+hashTexto(info.avisos.join('|')), titulo:'Linhas da aba Maquinas que o dashboard ignorou', acoes:'',
+      texto:info.avisos.map(escStatusHtml).join('<br>')});
+  }
+  return {ativos:ativos, ignorados:nIgn};
+}
+function textoIgnorados(n, link){ return n+(n===1 ? ' aviso ignorado' : ' avisos ignorados')+' neste navegador · <button type="button" class="pd-link" data-reexibir="1">'+link+'</button>'; }
+
+/** Indicador do topo (só a contagem) + a lista, que fica fechada até a pessoa clicar. Sem aviso, nada aparece. */
+function renderAvisos(){
+  var r = listarAvisos(), n = r.ativos.length;
+  var wrap = document.getElementById('pd-avisos-wrap'), btn = document.getElementById('pd-avisos-btn'), painel = document.getElementById('pd-avisos-painel');
+  var rot = n===1 ? '1 aviso' : n+' avisos';
+  document.getElementById('pd-avisos-n').textContent = String(n);
+  document.getElementById('pd-avisos-lbl').textContent = n===1 ? 'aviso' : 'avisos';
+  btn.title = rot+' sobre a frota — clique pra ver';
+  btn.setAttribute('aria-label', rot+' sobre a frota');
+  painel.innerHTML = '<div class="pd-avp-head"><span>Avisos da frota</span><button type="button" class="pd-modal-close" data-avisos-fechar="1" aria-label="Fechar avisos">✕</button></div>'+
+    r.ativos.map(function(a){
+      return '<div class="pd-avp-item" data-aviso="'+escAttr(a.chave)+'"><span class="pd-avp-dot" aria-hidden="true"></span><div class="pd-avp-body">'+
+        '<div class="pd-avp-t">'+a.titulo+'</div><div class="pd-avp-d">'+a.texto+'</div>'+
+        '<div class="pd-avp-acts">'+a.acoes+'<button type="button" class="pd-avp-ign" data-ignorar="'+escAttr(a.chave)+'" title="Tirar da contagem neste navegador">Ignorar</button></div></div></div>';
+    }).join('')+
+    (r.ignorados ? '<div class="pd-avp-foot">'+textoIgnorados(r.ignorados, 'mostrar de novo')+'</div>' : '');
+  wrap.hidden = n===0;
+  if(!n) fecharAvisos();
+  // No Cadastro, quando algum foi ignorado, fica só uma linha discreta pra trazer de volta.
+  var ign = document.getElementById('pd-cadastro-ign');
+  if(r.ignorados){ ign.innerHTML = textoIgnorados(r.ignorados, 'mostrar'); ign.hidden = false; }
+  else { ign.hidden = true; ign.innerHTML = ''; }
+}
+function avisosAbertos(){ return !document.getElementById('pd-avisos-painel').hidden; }
+function abrirAvisos(){ document.getElementById('pd-avisos-painel').hidden = false; document.getElementById('pd-avisos-btn').setAttribute('aria-expanded', 'true'); }
+function fecharAvisos(){
+  var p = document.getElementById('pd-avisos-painel');
+  if(p.hidden) return;
+  p.hidden = true;
+  document.getElementById('pd-avisos-btn').setAttribute('aria-expanded', 'false');
 }
 
-/** Máquinas › Cadastro: a lista da aba Maquinas como o dashboard leu, os avisos sobre ela e o formulário que
- * grava na aba (Code.gs: ?action=saveMachine / deleteMachine). */
+/** Confirmação rápida no rodapé da tela (some sozinha). */
+function mostrarToast(txt){
+  var t = document.getElementById('pd-toast');
+  t.textContent = txt; t.hidden = false;
+  clearTimeout(mostrarToast._t);
+  mostrarToast._t = setTimeout(function(){ t.hidden = true; }, 5000);
+}
+
+var ICO_EDITAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
+
+/** Máquinas › Cadastro: a lista da aba Maquinas como o dashboard leu. "+" adiciona, clique numa máquina edita
+ * (os dois abrem a janela que grava na aba: Code.gs ?action=saveMachine / deleteMachine). */
 function renderCadastro(){
   var info = FLEET_INFO, hojeD = LATEST_DOY;
   var comApont = {}; ROWS.forEach(function(r){ comApont[r[1]] = true; });
   var fonteEl = document.getElementById('pd-cadastro-fonte');
-  if(info.fonte==='aba') fonteEl.textContent = 'Lido da aba "'+(info.aba||'Maquinas')+'" da planilha · '+FLEET.length+' injetoras · clique numa linha pra editar';
-  else if(info.fonte==='padrao') fonteEl.textContent = 'A planilha não tem a aba Maquinas (ou ela está sem nenhum ID válido) — o Code.gs usou a lista fixa de '+FLEET.length+' injetoras. O primeiro cadastro pelo formulário cria a aba.';
+  if(info.fonte==='aba') fonteEl.textContent = 'Lido da aba "'+(info.aba||'Maquinas')+'" da planilha · '+FLEET.length+' injetoras · clique numa máquina pra editar, ou no + pra adicionar';
+  else if(info.fonte==='padrao') fonteEl.textContent = 'A planilha não tem a aba Maquinas (ou ela está sem nenhum ID válido) — o Code.gs usou a lista fixa de '+FLEET.length+' injetoras. O primeiro cadastro pelo + cria a aba.';
   else fonteEl.textContent = 'Lista padrão embutida no dashboard ('+FLEET.length+' injetoras): o App da Web não respondeu à leitura da aba Maquinas. Publique a nova versão do Code.gs (Implantar → Gerenciar implantações → lápis → Nova versão).';
-  var avisos = [];
-  if(info.fonte!=='aba') avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div>'+escStatusHtml(fonteEl.textContent)+'</div></div>');
-  var nIgn = 0;
-  var fora = maquinasForaDaAba().filter(function(x){ if(ignorado('fora:'+x.id)){ nIgn++; return false; } return true; });
-  if(fora.length) avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div>'+textoForaDaAba(fora)+'<br>'+botoesVolta(fora)+fora.map(function(x){ return botaoIgnorar('fora:'+x.id); }).join('')+'</div></div>');
-  var semData = FLEET.filter(function(m){
-    if(FLEET_META[m].ent!==null || comApont[m]) return false;
-    if(ignorado('semdata:'+m)){ nIgn++; return false; }
-    return true;
-  });
-  if(semData.length){
-    avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div>'+semData.map(function(m){ return '<b>INJ '+m+'</b>'; }).join(', ')+
-      (semData.length===1 ? ' não tem data de entrada na frota e nenhum apontamento até agora: do jeito que está, ela conta como parada em TODOS os dias desde o começo dos dados' :
-                            ' não têm data de entrada na frota e nenhum apontamento até agora: do jeito que estão, contam como paradas em TODOS os dias desde o começo dos dados')+
-      ', e a eficiência do histórico cai. Se é máquina nova, preencha a entrada com o dia em que começou a produzir.<br>'+
-      semData.map(function(m){ return '<button type="button" class="pd-aviso-btn" data-cad-edit="'+m+'">Preencher a entrada da INJ '+m+'</button>'+botaoIgnorar('semdata:'+m); }).join('')+'</div></div>');
-  }
-  if((info.avisos||[]).length){
-    avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div><b>Linhas da aba que o dashboard ignorou:</b><br>'+info.avisos.map(escStatusHtml).join('<br>')+'</div></div>');
-  }
-  if(nIgn) avisos.push('<div class="pd-avisos-ign">'+nIgn+(nIgn===1 ? ' aviso ignorado' : ' avisos ignorados')+' neste navegador · <button type="button" class="pd-link" data-reexibir="1">mostrar de novo</button></div>');
-  document.getElementById('pd-cadastro-avisos').innerHTML = avisos.join('');
   var noFim = FLEET.filter(function(m){ return inFleetOn(m, hojeD); }).length;
   var entraram = FLEET.filter(function(m){ var f=FLEET_META[m]; return f.ent!==null && f.ent>hojeD-31 && f.ent<=hojeD; });
   document.getElementById('pd-kpis-cadastro').innerHTML = [
@@ -3096,20 +3209,22 @@ function renderCadastro(){
     var f = FLEET_META[m];
     var sit = !inFleetOn(m, hojeD) ? (f.sai!==null && f.sai<hojeD ? ['Saiu', 'pd-p-mut'] : ['Ainda não entrou', 'pd-p-new'])
       : (f.ent===null && !comApont[m] ? ['Sem data de entrada', 'pd-p-warn'] : (f.ent!==null && f.ent>hojeD-31 ? ['Nova', 'pd-p-new'] : ['Ativa', 'pd-p-ok']));
-    return '<tr class="pd-row-click'+(sit[0]==='Nova'?' pd-row-new':'')+'" data-m="'+m+'" title="Clique pra editar a INJ '+m+'"><td style="font-weight:700;">'+m+'</td><td style="font-family:var(--font-ui);">'+escStatusHtml(f.fab||'—')+'</td><td>'+escStatusHtml(f.mod||'—')+'</td>'+
+    var cls = 'pd-row-click'+(sit[0]==='Nova'?' pd-row-new':'')+(CAD.destacar===m?' pd-row-flash':'');
+    return '<tr class="'+cls+'" data-m="'+m+'" title="Clique pra editar a INJ '+m+'"><td style="font-weight:700;">'+m+'</td><td style="font-family:var(--font-ui);">'+escStatusHtml(f.fab||'—')+'</td><td>'+escStatusHtml(f.mod||'—')+'</td>'+
       '<td>'+(f.ent!==null ? doyToFull(f.ent) : '<span style="color:var(--text-faint)">— (desde sempre)</span>')+'</td>'+
       '<td>'+(f.sai!==null ? doyToFull(f.sai) : '<span style="color:var(--text-faint)">—</span>')+'</td>'+
-      '<td><span class="pd-pill '+sit[1]+'">'+sit[0]+'</span></td></tr>';
+      '<td><span class="pd-pill '+sit[1]+'">'+sit[0]+'</span></td>'+
+      '<td class="pd-cad-edit-td"><button type="button" class="pd-cad-edit-ico" aria-label="Editar INJ '+m+'" title="Editar">'+ICO_EDITAR+'</button></td></tr>';
   }).join('');
-  document.getElementById('pd-cadastro-table').innerHTML = '<thead><tr><th>ID</th><th>Fabricante</th><th>Modelo</th><th>Entrada na frota</th><th>Saída da frota</th><th>Situação</th></tr></thead><tbody>'+body+'</tbody>';
+  document.getElementById('pd-cadastro-table').innerHTML = '<thead><tr><th>ID</th><th>Fabricante</th><th>Modelo</th><th>Entrada na frota</th><th>Saída da frota</th><th>Situação</th><th><span class="pd-sr">Editar</span></th></tr></thead><tbody>'+body+'</tbody>';
 }
 
-// ---- formulário de cadastro (grava na aba Maquinas) ----
-var CAD = { modo:'novo', id:null, armTimer:null };
+// ---- janela de cadastro/edição (grava na aba Maquinas) ----
+var CAD = { modo:'novo', id:null, armTimer:null, ocupado:false, retorno:null, destacar:null, destacarTimer:null, downNoFundo:null };
 function cadEl(k){ return document.getElementById('pd-cad-'+k); }
 function isoHoje(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function setCadMsg(txt, tipo){ var el=cadEl('msg'); el.textContent = txt||''; el.className = 'pd-cad-msg'+(tipo?' '+tipo:''); el.dataset.tipo = tipo||''; }
-function cadOcupado(on){ ['salvar','novo','excluir'].forEach(function(k){ cadEl(k).disabled = !!on; }); }
+function cadOcupado(on){ CAD.ocupado = !!on; ['salvar','cancelar','excluir','fechar'].forEach(function(k){ cadEl(k).disabled = !!on; }); }
 function desarmarExcluir(){
   clearTimeout(CAD.armTimer); CAD.armTimer = null;
   var b = cadEl('excluir'); b.classList.remove('pd-armado'); b.textContent = 'Excluir';
@@ -3123,7 +3238,7 @@ function cadFormNovo(pre){
   cadEl('ent').value = pre.hasOwnProperty('ent') ? (pre.ent || '') : isoHoje();
   cadEl('sai').value = pre.sai || '';
   cadEl('excluir').hidden = true;
-  cadCabecalho('NOVA', 'Cadastrar máquina', 'Grava direto na aba Maquinas. Entrada na frota = dia em que ela começou a produzir. Pra editar ou marcar a saída de uma máquina, clique nela na tabela.');
+  cadCabecalho('NOVA', 'Nova máquina', 'Grava direto na aba Maquinas da planilha e já vale no mapa de calor, nos filtros e nas contas.');
 }
 function cadFormEditar(m){
   var f = FLEET_META[m];
@@ -3135,7 +3250,7 @@ function cadFormEditar(m){
   cadEl('sai').value = f.sai!==null ? doyToISO(f.sai) : '';
   var tem = ROWS.some(function(r){ return r[1]===m; });
   cadEl('excluir').hidden = tem;
-  cadCabecalho('EDITAR', 'Editando INJ '+m, tem
+  cadCabecalho('EDITAR', 'INJ '+m, tem
     ? 'A INJ '+m+' tem apontamentos: não dá pra excluir (o histórico dela sumiria do dashboard). Se ela saiu da fábrica, preencha a saída da frota.'
     : 'A INJ '+m+' não tem nenhum apontamento até agora — se foi cadastro por engano, dá pra excluir.');
   setCadMsg('');
@@ -3144,11 +3259,31 @@ function cadFormVolta(id){
   var pad = padraoDe(id), x = null;
   FLEET_FORA.forEach(function(f){ if(f.id===id) x = f; });
   cadFormNovo({id:id, fab: pad ? pad[1] : '', mod: pad ? pad[2] : '', ent:'', sai:''});
+  cadCabecalho('DE VOLTA', 'INJ '+id, 'Volta a máquina pra aba Maquinas, e o histórico dela volta pras contas.');
   setCadMsg('A INJ '+id+(x ? ' tem '+fmtInt(x.n)+' apontamentos (último em '+doyToFull(x.ultimo)+')' : '')+
     '. Se ela continua na fábrica, deixe a saída em branco e salve. Se saiu, preencha a saída da frota com o último dia dela.', 'aviso');
 }
-function abrirCadastroVolta(id){ switchView('maquinas', 'cadastro'); cadFormVolta(id); try{ cadEl('form-card').scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){} }
-function abrirCadastroEdicao(m){ switchView('maquinas', 'cadastro'); cadFormEditar(m); try{ cadEl('form-card').scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){} }
+function cadAberto(){ return document.getElementById('pd-cad-overlay').classList.contains('show'); }
+/** Abre a janela. foco = campo que recebe o cursor; quem = elemento que abriu (o foco volta pra ele ao fechar). */
+function abrirCadDialog(foco, quem){
+  if(!cadAberto()) CAD.retorno = quem || document.activeElement;
+  document.getElementById('pd-cad-overlay').classList.add('show');
+  var alvo = cadEl(foco || (CAD.modo==='editar' ? 'fab' : 'id'));
+  if(alvo){ try { alvo.focus(); } catch(e){} }
+}
+function fecharCadDialog(){
+  if(CAD.ocupado || !cadAberto()) return;
+  document.getElementById('pd-cad-overlay').classList.remove('show');
+  desarmarExcluir(); setCadMsg('');
+  var r = CAD.retorno; CAD.retorno = null;
+  if(r && r.isConnected && typeof r.focus==='function'){ try { r.focus(); } catch(e){} }
+}
+function destacarLinha(m){
+  CAD.destacar = m; clearTimeout(CAD.destacarTimer);
+  CAD.destacarTimer = setTimeout(function(){ CAD.destacar = null; }, 3000);
+}
+function abrirCadastroVolta(id, quem){ switchView('maquinas', 'cadastro'); cadFormVolta(id); abrirCadDialog('salvar', quem); }
+function abrirCadastroEdicao(m, foco, quem){ switchView('maquinas', 'cadastro'); cadFormEditar(m); abrirCadDialog(foco, quem); }
 
 function percentile(arr, p){
   if(!arr.length) return 0;
@@ -4137,8 +4272,8 @@ function switchView(v, sub){
   document.getElementById('pd-ptitle').textContent = meta.t;
   document.getElementById('pd-pdesc').textContent = meta.d;
   document.getElementById('pd-filterbar').classList.toggle('pd-sub-hidden', !!meta.semFiltros);
-  document.getElementById('pd-frota-alerta').classList.toggle('pd-sub-hidden', v==='maquinas' && sub==='cadastro');
   fecharFlyout();
+  fecharAvisos();
   setMobileMenu(false);
   if(v==='limpeza' && sub==='historico'){
     var wrap = document.getElementById('pd-limpeza-detail-wrap'), tg = document.getElementById('pd-limpeza-detail-toggle');
@@ -4389,7 +4524,12 @@ document.getElementById('pd-filtros-mob-btn').addEventListener('click', function
   var onChange = function(){ if(!ROWS.length) return; if(STATE.activeView==='geral' && STATE.activeSub==='painel') renderOverview(); };
   if(mq.addEventListener) mq.addEventListener('change', onChange); else if(mq.addListener) mq.addListener(onChange);
 })();
-document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeModal(); fecharFlyout(); } });
+document.addEventListener('keydown', function(e){
+  if(e.key!=='Escape') return;
+  if(cadAberto()){ fecharCadDialog(); return; }
+  if(avisosAbertos()){ fecharAvisos(); try { document.getElementById('pd-avisos-btn').focus(); } catch(err){} }
+  closeModal(); fecharFlyout();
+});
 ['pd-chart-perf','pd-chart-scrap'].forEach(function(id){
   document.getElementById(id).addEventListener('click', function(e){
     var c = e.target.closest('.pd-chart-dot'); if(!c) return;
@@ -4653,7 +4793,7 @@ function recarregarDados(){
     document.getElementById('pd-date-end').max = doyToISO(LATEST_DOY);
     populateGlobalFilterOptions();
     renderAll();
-    renderFrotaAlerta();
+    renderAvisos();
     loadStatusMap(); // antes só o F5 trazia marcas de status gravadas por outras pessoas
     fetchLimpezaFromWebApp().then(function(limpezaArr){ LIMPEZA_ROWS = limpezaArr; if(STATE.activeView==='limpeza') renderLimpeza(); });
     marcarHoraDosDados();
@@ -4702,9 +4842,10 @@ function jsonpAcao(params){
   });
 }
 
-// ---- eventos do Cadastro de máquinas ----
+// ---- eventos do Cadastro de máquinas (janela) ----
 document.getElementById('pd-cad-form').addEventListener('submit', function(e){
   e.preventDefault();
+  if(CAD.ocupado) return;
   var idTxt = cadEl('id').value.trim(), id = Number(idTxt);
   if(!idTxt || !isFinite(id) || id<=0 || Math.floor(id)!==id){ setCadMsg('ID da injetora inválido — use um número inteiro, ex.: 304.', 'erro'); return; }
   var ent = cadEl('ent').value, sai = cadEl('sai').value;
@@ -4715,26 +4856,26 @@ document.getElementById('pd-cad-form').addEventListener('submit', function(e){
   jsonpAcao({action:'saveMachine', id:id, fab:cadEl('fab').value.trim(), mod:cadEl('mod').value.trim(), entrada:ent, saida:sai})
     .then(function(res){
       setCadMsg('Salvo na aba Maquinas ✓ Recarregando os dados…', 'ok');
+      destacarLinha(id);
       return recarregarDados().then(function(){ return res; }, function(err){
         throw new Error('Salvo na planilha, mas não consegui recarregar os dados ('+err.message+'). Clique em atualizar no topo.');
       });
     })
     .then(function(res){
-      cadFormEditar(id);
-      setCadMsg('INJ '+id+' '+(res.acao==='criado' ? 'cadastrada' : 'atualizada')+' na aba Maquinas ✓ — já vale no mapa de calor, nos filtros e nas contas.', 'ok');
+      cadOcupado(false);
+      fecharCadDialog();
+      mostrarToast('INJ '+id+' '+(res.acao==='criado' ? 'cadastrada' : 'atualizada')+' na aba Maquinas ✓');
     })
-    .catch(function(err){ setCadMsg(err.message, 'erro'); })
-    .then(function(){ cadOcupado(false); });
+    .catch(function(err){ cadOcupado(false); setCadMsg(err.message, 'erro'); });
 });
 document.getElementById('pd-cad-id').addEventListener('input', function(){
   if(CAD.modo!=='novo') return;
   var id = Number(this.value);
-  if(this.value && FLEET_META[id]) setCadMsg('A INJ '+id+' já está cadastrada — salvar vai atualizar a linha dela (ou clique nela na tabela pra carregar os dados atuais).', 'aviso');
+  if(this.value && FLEET_META[id]) setCadMsg('A INJ '+id+' já está cadastrada — salvar vai atualizar a linha dela (ou feche e clique nela na tabela pra carregar os dados atuais).', 'aviso');
   else if(cadEl('msg').dataset.tipo==='aviso') setCadMsg('');
 });
-document.getElementById('pd-cad-novo').addEventListener('click', function(){ cadFormNovo(); setCadMsg(''); cadEl('id').focus(); });
 document.getElementById('pd-cad-excluir').addEventListener('click', function(){
-  if(CAD.modo!=='editar' || CAD.id===null) return;
+  if(CAD.modo!=='editar' || CAD.id===null || CAD.ocupado) return;
   var btn = this;
   if(!btn.classList.contains('pd-armado')){
     btn.classList.add('pd-armado'); btn.textContent = 'Confirmar exclusão da INJ '+CAD.id;
@@ -4747,26 +4888,62 @@ document.getElementById('pd-cad-excluir').addEventListener('click', function(){
   setCadMsg('Excluindo a INJ '+id+' da aba Maquinas…');
   jsonpAcao({action:'deleteMachine', id:id})
     .then(function(){ setCadMsg('Excluída ✓ Recarregando os dados…', 'ok'); return recarregarDados(); })
-    .then(function(){ cadFormNovo(); setCadMsg('INJ '+id+' excluída da aba Maquinas.', 'ok'); })
-    .catch(function(err){ setCadMsg(err.message, 'erro'); })
-    .then(function(){ cadOcupado(false); });
+    .then(function(){ cadOcupado(false); fecharCadDialog(); cadFormNovo(); mostrarToast('INJ '+id+' excluída da aba Maquinas'); })
+    .catch(function(err){ cadOcupado(false); setCadMsg(err.message, 'erro'); });
+});
+document.getElementById('pd-cad-add').addEventListener('click', function(){ cadFormNovo(); setCadMsg(''); abrirCadDialog('id', this); });
+document.getElementById('pd-cad-cancelar').addEventListener('click', fecharCadDialog);
+document.getElementById('pd-cad-fechar').addEventListener('click', fecharCadDialog);
+// Clique no fundo escuro fecha -- só se o clique COMEÇOU no fundo (arrastar pra selecionar texto num campo e
+// soltar fora não fecha a janela).
+document.getElementById('pd-cad-overlay').addEventListener('mousedown', function(e){ CAD.downNoFundo = (e.target === this); });
+document.getElementById('pd-cad-overlay').addEventListener('click', function(e){
+  var comecouNoFundo = CAD.downNoFundo !== false; CAD.downNoFundo = null;
+  if(e.target === this && comecouNoFundo) fecharCadDialog();
+});
+// Tab fica dentro da janela enquanto ela está aberta.
+document.getElementById('pd-cad-overlay').addEventListener('keydown', function(e){
+  if(e.key!=='Tab') return;
+  var foc = Array.prototype.slice.call(this.querySelectorAll('button, input')).filter(function(el){ return !el.disabled && !el.hidden; });
+  if(!foc.length) return;
+  var i = foc.indexOf(document.activeElement);
+  if(e.shiftKey && i<=0){ e.preventDefault(); foc[foc.length-1].focus(); }
+  else if(!e.shiftKey && i===foc.length-1){ e.preventDefault(); foc[0].focus(); }
 });
 document.getElementById('pd-cadastro-table').addEventListener('click', function(e){
   var tr = e.target.closest('tr[data-m]'); if(!tr) return;
   cadFormEditar(Number(tr.dataset.m));
-  try{ cadEl('form-card').scrollIntoView({behavior:'smooth', block:'start'}); }catch(err){}
+  abrirCadDialog('fab', tr.querySelector('.pd-cad-edit-ico'));
 });
-['pd-cadastro-avisos', 'pd-frota-alerta'].forEach(function(idEl){
-  document.getElementById(idEl).addEventListener('click', function(e){
-    var v = e.target.closest('[data-cad-volta]');
-    if(v){ abrirCadastroVolta(Number(v.dataset.cadVolta)); return; }
-    var ed = e.target.closest('[data-cad-edit]');
-    if(ed){ abrirCadastroEdicao(Number(ed.dataset.cadEdit)); return; }
-    var ig = e.target.closest('[data-ignorar]');
-    if(ig){ ignorarAviso(ig.dataset.ignorar); renderFrotaAlerta(); if(STATE.activeView==='maquinas' && STATE.activeSub==='cadastro') renderCadastro(); return; }
-    if(e.target.closest('[data-reexibir]')){ reexibirAvisos(); renderFrotaAlerta(); renderCadastro(); }
-  });
+document.getElementById('pd-cadastro-ign').addEventListener('click', function(e){
+  if(!e.target.closest('[data-reexibir]')) return;
+  reexibirAvisos(); renderAvisos();
 });
+
+// ---- indicador de avisos do topo ----
+document.getElementById('pd-avisos-btn').addEventListener('click', function(e){
+  e.stopPropagation();
+  if(avisosAbertos()) fecharAvisos(); else abrirAvisos();
+});
+document.getElementById('pd-avisos-painel').addEventListener('click', function(e){
+  e.stopPropagation(); // a lista é redesenhada ao ignorar: o clique não pode chegar no "clicou fora, fecha"
+  var chip = document.getElementById('pd-avisos-btn');
+  var v = e.target.closest('[data-cad-volta]');
+  if(v){ fecharAvisos(); abrirCadastroVolta(Number(v.dataset.cadVolta), chip); return; }
+  var ed = e.target.closest('[data-cad-edit]');
+  if(ed){ fecharAvisos(); abrirCadastroEdicao(Number(ed.dataset.cadEdit), 'ent', chip); return; }
+  var ig = e.target.closest('[data-ignorar]');
+  if(ig){
+    ignorarAviso(ig.dataset.ignorar); renderAvisos();
+    if(!avisosAbertos()) return; // ignorou o último: o indicador sumiu
+    var prox = document.querySelector('#pd-avisos-painel .pd-avp-btn, #pd-avisos-painel .pd-avp-ign');
+    if(prox){ try { prox.focus(); } catch(err){} }
+    return;
+  }
+  if(e.target.closest('[data-reexibir]')){ reexibirAvisos(); renderAvisos(); return; }
+  if(e.target.closest('[data-avisos-fechar]')){ fecharAvisos(); try { chip.focus(); } catch(err){} }
+});
+document.addEventListener('click', function(e){ if(avisosAbertos() && !e.target.closest('#pd-avisos-wrap')) fecharAvisos(); });
 
 document.getElementById('pd-status-banner').addEventListener('click', function(e){
   if(e.target.closest('.pd-banner-close')){ hideStatusBanner(); return; }
@@ -4808,7 +4985,7 @@ function bootDashboardWithData(freshRows){
   marcarHoraDosDados();
   cadFormNovo();
   switchView(STATE.activeView, STATE.activeSub);
-  renderFrotaAlerta();
+  renderAvisos();
   var overlay = document.getElementById('pd-loading-overlay');
   if(overlay) overlay.remove();
 }
