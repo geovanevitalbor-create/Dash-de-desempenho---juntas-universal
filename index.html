@@ -625,6 +625,10 @@
   .pd-aviso .pd-aviso-btn:hover{border-color:#fbbf24;}
   .pd-aviso[hidden]{display:none;}
   .pd-avisos-lista{display:flex;flex-direction:column;gap:10px;}
+  .pd-aviso .pd-aviso-btn.pd-aviso-x{background:transparent;border-color:transparent;color:#d6c38a;font-weight:600;text-decoration:underline;text-underline-offset:3px;}
+  .pd-aviso .pd-aviso-btn.pd-aviso-x:hover{color:#fde68a;border-color:transparent;}
+  .pd-avisos-ign{font-size:11.5px;color:var(--text-faint);}
+  .pd-link{background:none;border:none;padding:0;color:var(--accent-text);font:600 11.5px var(--font-ui);cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
   .pd-avisos-lista:empty{display:none;}
   @media (max-width:1240px){ .pd-cad-form{grid-template-columns:repeat(3,minmax(0,1fr));} .pd-cad-actions{grid-column:1 / -1;} }
 
@@ -710,7 +714,7 @@
       <div class="pd-tsub">Fab II · injetoras · formulário RQ 030/076</div>
     </div>
     <div class="pd-tright">
-      <div class="pd-chip"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-10-21.2</span></div>
+      <div class="pd-chip"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-10-21.3</span></div>
       <div class="pd-chip"><span class="pd-chip-k">Dados extraídos em</span><span class="pd-chip-v" id="pd-updated-value">—</span></div>
       <button class="pd-ibtn" id="pd-refresh-btn" type="button" title="Buscar dados novos da planilha" aria-label="Atualizar dados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg></button>
       <button class="pd-tmob" id="pd-mob-menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
@@ -1006,14 +1010,13 @@
               <table class="pd-table" id="pd-maq-ferramentas-table"></table>
             </div>
           </div>
-            <div class="pd-aviso" data-sub="cadastro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><div>Máquina nova: use o formulário abaixo — ele grava direto na aba <b>Maquinas</b> da planilha (editar a aba à mão também continua valendo). Preencha a <b>entrada na frota</b> com o dia em que ela começou a produzir: sem data, a máquina conta como parada em todos os dias antigos e a eficiência do histórico cai. Máquina vendida ou desativada: preencha a <b>saída da frota</b> em vez de apagar a linha — apagando, o histórico dela some do dashboard.</div></div>
             <div class="pd-avisos-lista" id="pd-cadastro-avisos" data-sub="cadastro"></div>
             <div class="pd-kgrid" id="pd-kpis-cadastro" data-sub="cadastro"></div>
             <section class="pd-card" data-sub="cadastro" id="pd-cad-form-card">
               <div class="pd-shead">
                 <div>
                   <div class="pd-stitle"><span class="pd-sbar"></span><span class="pd-stag" id="pd-cad-tag">NOVA</span><span id="pd-cad-titulo">Cadastrar máquina</span></div>
-                  <div class="pd-ssub" id="pd-cad-sub">Grava direto na aba Maquinas da planilha. Pra editar uma máquina, clique nela na tabela abaixo.</div>
+                  <div class="pd-ssub" id="pd-cad-sub">Grava direto na aba Maquinas. Entrada na frota = dia em que ela começou a produzir. Pra editar ou marcar a saída de uma máquina, clique nela na tabela.</div>
                 </div>
               </div>
               <form class="pd-cad-form" id="pd-cad-form" autocomplete="off" novalidate>
@@ -3022,10 +3025,10 @@ function renderParadas(){
 }
 
 /** Injetoras com apontamento na planilha que não estão na aba Maquinas, com volume de máquina de verdade
- * (3+ apontamentos). 1 ou 2 apontamentos com número estranho (77, 413...) é erro de digitação no formulário. */
+ * (3+ apontamentos). 1 ou 2 apontamentos com número estranho (77, 413...) é erro de digitação no formulário e não
+ * vira aviso (só polui a tela). */
 var FORA_MIN_APONT = 3;
 function maquinasForaDaAba(){ return FLEET_FORA.filter(function(x){ return x.n >= FORA_MIN_APONT && !FLEET_META[x.id]; }); }
-function digitacaoForaDaAba(){ return FLEET_FORA.filter(function(x){ return x.n < FORA_MIN_APONT && !FLEET_META[x.id]; }); }
 function textoForaDaAba(lista){
   var um = lista.length === 1;
   var desc = lista.map(function(x){ return '<b>INJ '+x.id+'</b> — '+fmtInt(x.n)+' apontamentos'+(x.primeiro!=null ? ', de '+doyToFull(x.primeiro)+' a '+doyToFull(x.ultimo) : ''); }).join('; ');
@@ -3034,13 +3037,20 @@ function textoForaDaAba(lista){
     'Se a linha foi apagada ou sobrescrita na aba, cadastre de volta; se a máquina saiu da fábrica, cadastre com a saída da frota.';
 }
 function botoesVolta(lista){ return lista.map(function(x){ return '<button type="button" class="pd-aviso-btn" data-cad-volta="'+x.id+'">Cadastrar a INJ '+x.id+' de volta</button>'; }).join(''); }
+// Avisos que a pessoa mandou ignorar (neste navegador): 'fora:213', 'semdata:304'... Somem do Cadastro e do topo.
+var AVISOS_KEY = 'pd.avisosIgnorados';
+function avisosIgnorados(){ try { var v = JSON.parse(window.localStorage.getItem(AVISOS_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
+function ignorarAviso(chave){ var v = avisosIgnorados(); if(v.indexOf(chave)===-1) v.push(chave); try { window.localStorage.setItem(AVISOS_KEY, JSON.stringify(v)); } catch(e){} }
+function reexibirAvisos(){ try { window.localStorage.removeItem(AVISOS_KEY); } catch(e){} }
+function ignorado(chave){ return avisosIgnorados().indexOf(chave)!==-1; }
+function botaoIgnorar(chave){ return '<button type="button" class="pd-aviso-btn pd-aviso-x" data-ignorar="'+chave+'" title="Esconder este aviso neste navegador">Ignorar</button>'; }
 var ICO_ALERTA = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>';
 /** Alerta no topo de todas as telas (menos no Cadastro, que mostra o mesmo aviso com mais detalhe). */
 function renderFrotaAlerta(){
   var el = document.getElementById('pd-frota-alerta');
-  var lista = maquinasForaDaAba();
+  var lista = maquinasForaDaAba().filter(function(x){ return !ignorado('fora:'+x.id); });
   if(!lista.length){ el.hidden = true; el.innerHTML = ''; return; }
-  el.innerHTML = ICO_ALERTA+'<div>'+textoForaDaAba(lista)+'<br>'+botoesVolta(lista)+'</div>';
+  el.innerHTML = ICO_ALERTA+'<div>'+textoForaDaAba(lista)+'<br>'+botoesVolta(lista)+lista.map(function(x){ return botaoIgnorar('fora:'+x.id); }).join('')+'</div>';
   el.hidden = false;
 }
 
@@ -3055,24 +3065,25 @@ function renderCadastro(){
   else fonteEl.textContent = 'Lista padrão embutida no dashboard ('+FLEET.length+' injetoras): o App da Web não respondeu à leitura da aba Maquinas. Publique a nova versão do Code.gs (Implantar → Gerenciar implantações → lápis → Nova versão).';
   var avisos = [];
   if(info.fonte!=='aba') avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div>'+escStatusHtml(fonteEl.textContent)+'</div></div>');
-  var fora = maquinasForaDaAba();
-  if(fora.length) avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div>'+textoForaDaAba(fora)+'<br>'+botoesVolta(fora)+'</div></div>');
-  var semData = FLEET.filter(function(m){ return FLEET_META[m].ent===null && !comApont[m]; });
+  var nIgn = 0;
+  var fora = maquinasForaDaAba().filter(function(x){ if(ignorado('fora:'+x.id)){ nIgn++; return false; } return true; });
+  if(fora.length) avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div>'+textoForaDaAba(fora)+'<br>'+botoesVolta(fora)+fora.map(function(x){ return botaoIgnorar('fora:'+x.id); }).join('')+'</div></div>');
+  var semData = FLEET.filter(function(m){
+    if(FLEET_META[m].ent!==null || comApont[m]) return false;
+    if(ignorado('semdata:'+m)){ nIgn++; return false; }
+    return true;
+  });
   if(semData.length){
     avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div>'+semData.map(function(m){ return '<b>INJ '+m+'</b>'; }).join(', ')+
       (semData.length===1 ? ' não tem data de entrada na frota e nenhum apontamento até agora: do jeito que está, ela conta como parada em TODOS os dias desde o começo dos dados' :
                             ' não têm data de entrada na frota e nenhum apontamento até agora: do jeito que estão, contam como paradas em TODOS os dias desde o começo dos dados')+
       ', e a eficiência do histórico cai. Se é máquina nova, preencha a entrada com o dia em que começou a produzir.<br>'+
-      semData.map(function(m){ return '<button type="button" class="pd-aviso-btn" data-cad-edit="'+m+'">Preencher a entrada da INJ '+m+'</button>'; }).join('')+'</div></div>');
-  }
-  var dig = digitacaoForaDaAba();
-  if(dig.length){
-    avisos.push('<div class="pd-aviso">'+ICO_ALERTA.replace('M12 8v5M12 16h.01','M12 11v5M12 8h.01')+'<div>Apontamentos com número de injetora que não existe na aba (provável erro de digitação no formulário — ficam fora das contas): '+
-      dig.map(function(x){ return 'INJ '+x.id+' ('+x.n+'x'+(x.ultimo!=null?', '+doyToFull(x.ultimo):'')+')'; }).join(', ')+'. Se alguma for máquina de verdade, cadastre aqui.</div></div>');
+      semData.map(function(m){ return '<button type="button" class="pd-aviso-btn" data-cad-edit="'+m+'">Preencher a entrada da INJ '+m+'</button>'+botaoIgnorar('semdata:'+m); }).join('')+'</div></div>');
   }
   if((info.avisos||[]).length){
     avisos.push('<div class="pd-aviso pd-aviso-warn">'+ICO_ALERTA+'<div><b>Linhas da aba que o dashboard ignorou:</b><br>'+info.avisos.map(escStatusHtml).join('<br>')+'</div></div>');
   }
+  if(nIgn) avisos.push('<div class="pd-avisos-ign">'+nIgn+(nIgn===1 ? ' aviso ignorado' : ' avisos ignorados')+' neste navegador · <button type="button" class="pd-link" data-reexibir="1">mostrar de novo</button></div>');
   document.getElementById('pd-cadastro-avisos').innerHTML = avisos.join('');
   var noFim = FLEET.filter(function(m){ return inFleetOn(m, hojeD); }).length;
   var entraram = FLEET.filter(function(m){ var f=FLEET_META[m]; return f.ent!==null && f.ent>hojeD-31 && f.ent<=hojeD; });
@@ -3112,7 +3123,7 @@ function cadFormNovo(pre){
   cadEl('ent').value = pre.hasOwnProperty('ent') ? (pre.ent || '') : isoHoje();
   cadEl('sai').value = pre.sai || '';
   cadEl('excluir').hidden = true;
-  cadCabecalho('NOVA', 'Cadastrar máquina', 'Grava direto na aba Maquinas da planilha. Pra editar uma máquina, clique nela na tabela abaixo.');
+  cadCabecalho('NOVA', 'Cadastrar máquina', 'Grava direto na aba Maquinas. Entrada na frota = dia em que ela começou a produzir. Pra editar ou marcar a saída de uma máquina, clique nela na tabela.');
 }
 function cadFormEditar(m){
   var f = FLEET_META[m];
@@ -4750,7 +4761,10 @@ document.getElementById('pd-cadastro-table').addEventListener('click', function(
     var v = e.target.closest('[data-cad-volta]');
     if(v){ abrirCadastroVolta(Number(v.dataset.cadVolta)); return; }
     var ed = e.target.closest('[data-cad-edit]');
-    if(ed) abrirCadastroEdicao(Number(ed.dataset.cadEdit));
+    if(ed){ abrirCadastroEdicao(Number(ed.dataset.cadEdit)); return; }
+    var ig = e.target.closest('[data-ignorar]');
+    if(ig){ ignorarAviso(ig.dataset.ignorar); renderFrotaAlerta(); if(STATE.activeView==='maquinas' && STATE.activeSub==='cadastro') renderCadastro(); return; }
+    if(e.target.closest('[data-reexibir]')){ reexibirAvisos(); renderFrotaAlerta(); renderCadastro(); }
   });
 });
 
