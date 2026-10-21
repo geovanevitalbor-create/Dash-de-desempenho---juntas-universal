@@ -781,7 +781,7 @@
         <button class="pd-avisos-btn" id="pd-avisos-btn" type="button" aria-expanded="false" aria-controls="pd-avisos-painel" aria-label="Avisos sobre a frota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 21.5 20h-19L12 3.5z"/><path d="M12 10v4.5M12 17.2h.01"/></svg><span class="pd-avisos-n" id="pd-avisos-n">0</span><span class="pd-avisos-lbl" id="pd-avisos-lbl">avisos</span></button>
         <div class="pd-avisos-painel" id="pd-avisos-painel" role="region" aria-label="Avisos da frota" hidden></div>
       </div>
-      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-10-21.4</span></div>
+      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-10-21.5</span></div>
       <div class="pd-chip"><span class="pd-chip-k">Dados extraídos em</span><span class="pd-chip-v" id="pd-updated-value">—</span></div>
       <button class="pd-ibtn" id="pd-refresh-btn" type="button" title="Buscar dados novos da planilha" aria-label="Atualizar dados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg></button>
       <button class="pd-tmob" id="pd-mob-menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
@@ -1314,7 +1314,7 @@
               <div class="pd-config-ro" id="pd-cfg-frota-txt">—</div>
             </div>
             <div class="pd-config-row">
-              <div><div class="pd-config-label">Eficiência</div><div class="pd-config-desc">Soma do desempenho de cada máquina × turno ÷ (máquinas da frota naquele dia × 2 turnos). Máquina parada conta 0. Entram só os dias que tiveram algum apontamento; o dia em andamento fica de fora.</div></div>
+              <div><div class="pd-config-label">Eficiência</div><div class="pd-config-desc">Soma do desempenho de cada máquina × turno ÷ (máquinas da frota naquele dia × 2 turnos; com filtro de um turno só, × 1). Máquina parada conta 0. Entram só os dias que tiveram algum apontamento; o dia em andamento fica de fora.</div></div>
               <div class="pd-config-ro" id="pd-cfg-divisor-txt">—</div>
             </div>
             <div class="pd-config-row">
@@ -1545,6 +1545,19 @@ function effectiveTurno(r){ return turnoCategory(r[2]); }
 function turnoLabel(code){ return code; }
 // "D" funde tudo que não é Noite (Dia/Comercial/Manhã/Tarde/Outro); "N" = só Noite.
 function turnoBucket(r){ return effectiveTurno(r)==='Noite' ? 'N' : 'D'; }
+/** Colunas do mapa (D = turnos diurnos, N = Noite) que o filtro de turno deixa na conta; sem filtro, as duas.
+ * A eficiência divide pela frota × ESSE número: com o filtro só nos turnos diurnos, a noite não é capacidade
+ * perdida, só ficou fora do filtro (até 21/10 dividia sempre por 2 e o número caía pela metade). */
+function bucketsNoFiltro(){
+  var f = STATE.turnoFilter || [];
+  if(!f.length) return ['D','N'];
+  var temD = f.some(function(t){ return t!=='Noite'; }), temN = f.indexOf('Noite')!==-1;
+  var b = (temD ? ['D'] : []).concat(temN ? ['N'] : []);
+  return b.length ? b : ['D','N'];
+}
+function nTurnosEfi(){ return bucketsNoFiltro().length; }
+/** "× 2 turnos" / "× 1 turno (só o diurno, pelo filtro)" -- pros textos que explicam a conta. */
+function txtTurnosEfi(){ var b = bucketsNoFiltro(); return b.length===2 ? '2 turnos' : '1 turno — só o '+(b[0]==='D' ? 'diurno' : 'noturno')+', pelo filtro de turno'; }
 function isValidDesemp(r){ return r[3]!==null; }
 function clampDesemp(v){ return v===null||v===undefined ? null : Math.min(Math.max(v, STATE.minDesemp), STATE.maxDesemp); }
 function wasClamped(r){ return r[3]!==null && (r[3]<STATE.minDesemp || r[3]>STATE.maxDesemp); }
@@ -1708,16 +1721,17 @@ function computeAgg(startDoy,endDoy){
   var cellSum=0, cellCount=0;
   Object.keys(byDay).forEach(function(k){ var b=byDay[k]; cellSum += (b.dsD||0)+(b.dsN||0); cellCount += (b.dnD||0)+(b.dnN||0); });
   var desempSimple = cellCount ? cellSum/cellCount : null;
-  // Eficiência do período = Σ quadradinhos ÷ Σ (máquinas da frota no dia × 2 turnos), só nos dias fechados
+  // Eficiência do período = Σ quadradinhos ÷ Σ (máquinas da frota no dia × turnos na conta: 2, ou 1 com filtro
+  // de um turno só -- bucketsNoFiltro), só nos dias fechados
   // com produção (isClosedProdDay). Máquina parada conta 0. Identidade: eficiência = desempenho × ocupação.
-  var efiSum=0, efiCap=0, efiCells=0, efiDays=[];
+  var efiSum=0, efiCap=0, efiCells=0, efiDays=[], efiTurnos=nTurnosEfi();
   for(var dd=startDoy; dd<=endDoy; dd++){
     if(!isClosedProdDay(dd)) continue;
     var bdd = byDay[dd];
     var frotaDia = fleetOnDay(dd, bdd ? bdd.machines : null).length;
     var sDia = bdd ? (bdd.dsD||0)+(bdd.dsN||0) : 0, nDia = bdd ? (bdd.dnD||0)+(bdd.dnN||0) : 0;
     efiDays.push({day:dd, sum:sDia, n:nDia, frota:frotaDia});
-    efiSum += sDia; efiCells += nDia; efiCap += 2*frotaDia;
+    efiSum += sDia; efiCells += nDia; efiCap += efiTurnos*frotaDia;
   }
   var eficiencia = efiCap ? efiSum/efiCap : null; // os quadradinhos já estão em %
   var ocupacao = efiCap ? efiCells/efiCap*100 : null;
@@ -1734,7 +1748,7 @@ function computeAgg(startDoy,endDoy){
     bestDay:bestDay,worstDay:worstDay,mediaDiaria:mediaDiaria,mediaRefugo:mediaRefugo,
     machinesActive:Object.keys(byMachine).length, daysWithData:Object.keys(byDay).length,
     desDia:desDia, desempSimple:desempSimple, cellSum:cellSum, cellCount:cellCount,
-    eficiencia:eficiencia, efiSum:efiSum, efiCap:efiCap, efiCells:efiCells, efiDays:efiDays, ocupacao:ocupacao};
+    eficiencia:eficiencia, efiSum:efiSum, efiCap:efiCap, efiCells:efiCells, efiDays:efiDays, efiTurnos:efiTurnos, ocupacao:ocupacao};
 }
 
 /**
@@ -2522,7 +2536,7 @@ function openKpiExplain(id){
       var frota = fleetOnDay(d, b ? b.machines : null).length;
       var fechado = isClosedProdDay(d);
       linhas.push('<tr><td>'+doyToStr(d)+(isPartialDay(d)?' <span class="pd-pill pd-p-mut">em andamento</span>':'')+'</td><td>'+n+'</td><td>'+fmtDec(s,1)+'</td><td>'+fmtPct(n?s/n:null,1)+'</td>'+
-        '<td>'+(fechado?frota+' × 2 = '+(2*frota):'—')+'</td><td>'+(fechado&&frota?fmtPct(s/(2*frota),1):'—')+'</td></tr>');
+        '<td>'+(fechado?frota+' × '+agg.efiTurnos+' = '+(agg.efiTurnos*frota):'—')+'</td><td>'+(fechado&&frota?fmtPct(s/(agg.efiTurnos*frota),1):'—')+'</td></tr>');
     }
     corpo =
       '<div class="pd-modal-stats">'+
@@ -2533,7 +2547,7 @@ function openKpiExplain(id){
       '</div>'+
       '<p class="pd-explica-nota">'+
         '<b>Desempenho</b> = média dos quadradinhos do mapa de calor (máquina × turno que teve apontamento): Σ '+fmtDec(agg.cellSum,1)+' ÷ '+agg.cellCount+' = <b>'+fmtPct(agg.desempSimple,1)+'</b>. '+
-        '<b>Eficiência</b> = Σ dos mesmos quadradinhos ÷ (máquinas da frota no dia × 2 turnos), só nos dias fechados com produção: Σ '+fmtDec(agg.efiSum,1)+' ÷ '+agg.efiCap+' = <b>'+fmtPct(agg.eficiencia,1)+'</b> — máquina parada conta 0. '+
+        '<b>Eficiência</b> = Σ dos mesmos quadradinhos ÷ (máquinas da frota no dia × '+txtTurnosEfi()+'), só nos dias fechados com produção: Σ '+fmtDec(agg.efiSum,1)+' ÷ '+agg.efiCap+' = <b>'+fmtPct(agg.eficiencia,1)+'</b> — máquina parada conta 0. '+
         'Eficiência = desempenho × frota que rodou ('+fmtDec(agg.efiCells?agg.efiSum/agg.efiCells:null,1)+'% × '+fmtDec(agg.ocupacao,1)+'%, nos dias fechados). '+
         'O ponderado por peças (Σ boas ÷ Σ previstas = '+fmtInt(agg.sumBoas)+' ÷ '+fmtInt(agg.sumPrev)+') fica de comparação: ele dá mais peso pra ferramenta de muitas peças.'+
       '</p>'+
@@ -2582,7 +2596,7 @@ function renderOverview(){
       barra:{pct:des, meta:T.metaDesemp, txt:'meta '+T.metaDesemp+'%'+(des===null?'':(des>=T.metaDesemp?' · acima da meta':' · faltam '+fmtDec(T.metaDesemp-des,1)+' p.p.'))},
       title:'Clique pra ver a conta, dia a dia'}),
     kpiCardHtml({id:'efi', label:'Eficiência', valor:fmtDec(efi,1), unidade:'%', value:efi, cor:'#a78bfa', corVal:efi===null?null:'#c4b5fd',
-      sub:'frota inteira · máquina parada conta 0'+(temParcial?' · sem '+doyToStr(TODAY_DOY)+' (em andamento)':''),
+      sub:'frota inteira'+(agg.efiTurnos===1 ? ' · só o turno '+(bucketsNoFiltro()[0]==='D' ? 'diurno' : 'noturno')+' (filtro de turno)' : '')+' · máquina parada conta 0'+(temParcial?' · sem '+doyToStr(TODAY_DOY)+' (em andamento)':''),
       barra:{pct:efi, meta:T.metaEfic, txt:'meta '+T.metaEfic+'% (você define em Configurações)'}, title:'Clique pra ver a conta, dia a dia'}),
     kpiCardHtml({id:'ref', label:'Refugo', valor:fmtDec(agg.refRows.length?ref:null,1), unidade:'%', value:agg.refRows.length?ref:null, cor:'#ef4444', corVal:agg.refRows.length?statusColor(ref,T.metaRefugo,true):null,
       sub:'refugos ÷ (refugos + boas)', barra:{pct:ref*10, meta:T.metaRefugo*10, txt:'meta ≤ '+T.metaRefugo+'% · régua até 10%'}, title:'Clique pra ver a conta'}),
@@ -2600,7 +2614,7 @@ function renderOverview(){
   document.getElementById('pd-summary').innerHTML =
     rrowHtml('Melhor dia', agg.bestDay!==null ? doyToStr(agg.bestDay)+' · '+fmtPct(agg.desDia(agg.bestDay),0) : '—', '#22c55e', '#4ade80', '', 'Maior desempenho do dia (média dos quadradinhos), sem o dia em andamento')+
     rrowHtml('Pior dia', agg.worstDay!==null ? doyToStr(agg.worstDay)+' · '+fmtPct(agg.desDia(agg.worstDay),0) : '—', '#ef4444', '#f87171', '', 'Menor desempenho do dia (média dos quadradinhos), sem o dia em andamento')+
-    rrowHtml('Eficiência média', fmtPct(efi,1), '#a78bfa', '#c4b5fd', '', 'Σ quadradinhos ÷ Σ (frota do dia × 2), dias fechados com produção')+
+    rrowHtml('Eficiência média', fmtPct(efi,1), '#a78bfa', '#c4b5fd', '', 'Σ quadradinhos ÷ Σ (frota do dia × '+txtTurnosEfi()+'), dias fechados com produção')+
     rrowHtml('Frota que rodou (máquina × turno)', fmtPct(agg.ocupacao,1), '#06b6d4', '#67e8f9', '', agg.efiCells+' de '+agg.efiCap+' máquina × turno tiveram apontamento, nos dias fechados com produção')+
     rrowHtml('Peças previstas', fmtInt(agg.sumPrev), '#3b82f6')+
     rrowHtml('Dias com dados', agg.daysWithData+' de '+rangeDays, '#9aa39d')+
@@ -2686,8 +2700,10 @@ function renderHeatmap(agg){
   }
   var parcialNote = (he===TODAY_DOY ? ' · '+doyToStr(TODAY_DOY)+' com borda tracejada (em andamento)' : '');
   hc.textContent = efiMode
-    ? (mobile ? 'Últimos 7 dias, em %. Eficiência da máquina no dia = (D + N) ÷ 2, turno parado conta 0.'
-              : 'Eficiência de cada máquina no dia = (desempenho D + desempenho N) ÷ 2, e o turno sem apontamento conta 0. Ex.: rodou só de dia a 80% → 40%. Mesmas cores do desempenho · '+machines.length+' injetoras'+parcialNote)
+    ? (nTurnosEfi()===1
+        ? 'Com o filtro de turno, cada quadradinho é a eficiência da máquina só no turno '+(bucketsNoFiltro()[0]==='D' ? 'diurno' : 'noturno')+' · '+machines.length+' injetoras'+parcialNote
+        : (mobile ? 'Últimos 7 dias, em %. Eficiência da máquina no dia = (D + N) ÷ 2, turno parado conta 0.'
+              : 'Eficiência de cada máquina no dia = (desempenho D + desempenho N) ÷ 2, e o turno sem apontamento conta 0. Ex.: rodou só de dia a 80% → 40%. Mesmas cores do desempenho · '+machines.length+' injetoras'+parcialNote))
     : (mobile ? 'Últimos 7 dias, valores em %. No computador aparece o período inteiro.'
               : machines.length+' injetoras da frota (aba Maquinas) · cada dia tem duas colunas, D (diurno) e N (noturno) · clique em qualquer célula pra abrir os apontamentos, já filtrados pro turno clicado'+parcialNote);
 
@@ -2736,8 +2752,11 @@ function renderHeatmap(agg){
       if(efiMode){
         var q = 'INJ '+m+' · '+doyToStr(d);
         if(vD!==null || vN!==null){
-          var e = ((vD||0)+(vN||0))/2, ce = heatColor(e);
-          var tip = q+': ('+(vD!==null?fmtPct(vD,0):'0 (sem apontamento)')+' + '+(vN!==null?fmtPct(vN,0):'0 (sem apontamento)')+') ÷ 2 = '+fmtPct(e,0)+(isPartialDay(d)?' — dia em andamento, a noite ainda não aconteceu':'');
+          var nbE = nTurnosEfi();
+          var e = ((vD||0)+(vN||0))/nbE, ce = heatColor(e); // com filtro de um turno só, o outro não entra (nem como 0)
+          var tip = nbE===2
+            ? q+': ('+(vD!==null?fmtPct(vD,0):'0 (sem apontamento)')+' + '+(vN!==null?fmtPct(vN,0):'0 (sem apontamento)')+') ÷ 2 = '+fmtPct(e,0)+(isPartialDay(d)?' — dia em andamento, a noite ainda não aconteceu':'')
+            : q+': '+fmtPct(e,0)+' — '+txtTurnosEfi();
           tbody += '<td class="pd-heat-cell" colspan="2"'+base+' style="'+border+'background:'+ce.bg+';color:'+ce.text+';" title="'+escAttr(tip)+'">'+semPct(Math.round(e)+'%')+'</td>';
         } else if(g.D.length || g.N.length){
           tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" colspan="2"'+base+' style="'+border+'" title="'+escAttr(q+': apontou, mas sem desempenho válido (confira peças previstas). Clique pra ver.')+'">!</td>';
@@ -2981,7 +3000,7 @@ function renderMaquinas(){
   var emManutencao = [];
   var rows = frota.map(function(m){
     var b = agg.byMachine[m], pm = perM[m], meta = FLEET_META[m];
-    var efi = pm.dias ? pm.sE/(2*pm.dias) : null;
+    var efi = pm.dias ? pm.sE/(nTurnosEfi()*pm.dias) : null;
     var w = wide[m], sit;
     var stHoje = STATUS_MAP[statusKey(LATEST_DOY, m, 'D')] || STATUS_MAP[statusKey(LATEST_DOY, m, 'N')];
     if(w && w.endDay===null){ sit = [w.status+' · desde '+doyToStr(w.startDay), w.status==='Manutenção'?'pd-p-warn':'pd-p-bad']; if(w.status==='Manutenção') emManutencao.push(m); }
@@ -3005,7 +3024,7 @@ function renderMaquinas(){
   var th = function(k, label, tip){ return '<th data-k="'+k+'"'+(STATE.sortKey===k?' class="sorted"':'')+(tip?' title="'+escAttr(tip)+'"':'')+'>'+label+'</th>'; };
   var head='<thead><tr>'+th('m','Injetora')+th('fab','Fabricante · modelo')+
     th('desemp','Desempenho','Média dos quadradinhos da máquina no mapa (cada turno com apontamento)')+
-    th('efi','Eficiência','Soma dos quadradinhos ÷ (dias fechados com produção em que estava na frota × 2 turnos) — turno parado conta 0')+
+    th('efi','Eficiência','Soma dos quadradinhos ÷ (dias fechados com produção em que estava na frota × '+txtTurnosEfi()+') — turno parado conta 0')+
     th('refugo','Refugo')+th('turnos','Turnos rodados','Turnos (D/N) com pelo menos um apontamento, nos dias fechados com produção')+th('n','Apontamentos')+'<th>Situação</th></tr></thead>';
   var body='<tbody>';
   rows.forEach(function(r){
