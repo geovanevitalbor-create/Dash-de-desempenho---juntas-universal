@@ -689,6 +689,36 @@
   .pd-dica[open]{padding:4px 12px 12px;border-radius:12px;border:1px solid rgba(37,99,235,.3);background:rgba(37,99,235,.06);}
   .pd-dica-txt{padding:4px 2px 0 26px;font-size:12.5px;line-height:1.55;color:#cfe0ff;}
 
+  [hidden]{display:none !important;}
+  /* parada informada no apontamento: marca no canto da célula do mapa (a cor da célula não muda) */
+  .pd-heatmap-table td.pd-heat-cell.pd-par{position:relative;}
+  .pd-heatmap-table td.pd-heat-cell.pd-par::after{content:'';position:absolute;top:0;right:0;width:0;height:0;border-style:solid;
+    border-width:0 9px 9px 0;border-color:transparent rgba(5,8,6,.85) transparent transparent;border-top-right-radius:5px;pointer-events:none;}
+  .pd-heatmap-table td.pd-heat-cell.pd-par.pd-par-sem::before{content:'';position:absolute;top:0;right:0;width:0;height:0;border-style:solid;
+    border-width:0 12px 12px 0;border-color:transparent rgba(5,8,6,.9) transparent transparent;border-top-right-radius:5px;pointer-events:none;z-index:1;}
+  .pd-heatmap-table td.pd-heat-cell.pd-par.pd-par-sem::after{border-width:0 8px 8px 0;border-color:transparent #ffffff transparent transparent;z-index:2;}
+  .pd-sw-par{position:relative;background:#22c55e !important;overflow:hidden;}
+  .pd-sw-par::after{content:'';position:absolute;top:0;right:0;border-style:solid;border-width:0 7px 7px 0;border-color:transparent rgba(5,8,6,.85) transparent transparent;}
+  .pd-sw-par.pd-sw-par-sem::after{border-color:transparent #fff transparent transparent;box-shadow:none;}
+  .pd-tgl{display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:0 13px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);
+    color:var(--text-dim);font:700 11.5px var(--font-ui);cursor:pointer;white-space:nowrap;}
+  .pd-tgl:hover{color:var(--text);}
+  .pd-tgl.on{border-color:rgba(251,191,36,.55);background:rgba(251,191,36,.1);color:#fcd34d;}
+  .pd-tgl:disabled{opacity:.45;cursor:not-allowed;}
+  .pd-tgl:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;}
+  .pd-tgl-ico{width:12px;height:12px;border-radius:3px;background:#22c55e;position:relative;overflow:hidden;}
+  .pd-tgl-ico::after{content:'';position:absolute;top:0;right:0;border-style:solid;border-width:0 6px 6px 0;border-color:transparent rgba(5,8,6,.85) transparent transparent;}
+  /* página Paradas no apontamento */
+  .pd-brow.pd-brow-click{cursor:pointer;padding:6px 8px;margin:-6px -8px;border-radius:9px;border:1px solid transparent;}
+  .pd-brow.pd-brow-click:hover{background:rgba(255,255,255,.03);border-color:var(--border);}
+  .pd-brow.pd-brow-click.pd-sel{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.45);}
+  .pd-brow.pd-brow-click:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;}
+  .pd-fchip{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid rgba(251,191,36,.5);
+    background:rgba(251,191,36,.1);color:#fde68a;font:700 12px var(--font-ui);cursor:pointer;white-space:nowrap;}
+  .pd-fchip:hover{border-color:#fbbf24;}
+  .pd-txt-bad{color:#fca5a5;}
+  .pd-par-resp{white-space:normal;font-family:var(--font-ui);color:var(--text-dim);min-width:180px;}
+
   /* ===================== celular ===================== */
   @media (max-width:760px){
     .pd-top{padding:10px 14px;gap:10px;flex-wrap:nowrap;}
@@ -781,7 +811,7 @@
         <button class="pd-avisos-btn" id="pd-avisos-btn" type="button" aria-expanded="false" aria-controls="pd-avisos-painel" aria-label="Avisos sobre a frota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 21.5 20h-19L12 3.5z"/><path d="M12 10v4.5M12 17.2h.01"/></svg><span class="pd-avisos-n" id="pd-avisos-n">0</span><span class="pd-avisos-lbl" id="pd-avisos-lbl">avisos</span></button>
         <div class="pd-avisos-painel" id="pd-avisos-painel" role="region" aria-label="Avisos da frota" hidden></div>
       </div>
-      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-10-21.5</span></div>
+      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-11-03.1</span></div>
       <div class="pd-chip"><span class="pd-chip-k">Dados extraídos em</span><span class="pd-chip-v" id="pd-updated-value">—</span></div>
       <button class="pd-ibtn" id="pd-refresh-btn" type="button" title="Buscar dados novos da planilha" aria-label="Atualizar dados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg></button>
       <button class="pd-tmob" id="pd-mob-menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
@@ -831,9 +861,10 @@
           </button>
           <div class="pd-nsub">
             <button class="pd-nitem pd-nav-item" type="button" data-view="maquinas" data-sub="frota"><span class="pd-ndot"></span><span class="pd-nitxt">Frota</span></button>
-            <button class="pd-nitem pd-nav-item" type="button" data-view="maquinas" data-sub="paradas"><span class="pd-ndot"></span><span class="pd-nitxt">Paradas registradas</span><span class="pd-nnovo">novo</span></button>
+            <button class="pd-nitem pd-nav-item" type="button" data-view="maquinas" data-sub="paradas"><span class="pd-ndot"></span><span class="pd-nitxt">Paradas registradas</span></button>
+            <button class="pd-nitem pd-nav-item" type="button" data-view="maquinas" data-sub="apontparadas"><span class="pd-ndot"></span><span class="pd-nitxt">Paradas no apontamento</span><span class="pd-nnovo">novo</span></button>
             <button class="pd-nitem pd-nav-item" type="button" data-view="maquinas" data-sub="ferramentas"><span class="pd-ndot"></span><span class="pd-nitxt">Ferramentas (percentil)</span></button>
-            <button class="pd-nitem pd-nav-item" type="button" data-view="maquinas" data-sub="cadastro"><span class="pd-ndot"></span><span class="pd-nitxt">Cadastro de máquinas</span><span class="pd-nnovo">novo</span></button>
+            <button class="pd-nitem pd-nav-item" type="button" data-view="maquinas" data-sub="cadastro"><span class="pd-ndot"></span><span class="pd-nitxt">Cadastro de máquinas</span></button>
           </div>
         </div>
         <div class="pd-nsec" data-group="producao">
@@ -992,6 +1023,7 @@
                     <button type="button" data-metric="des" class="on" aria-pressed="true">Desempenho</button>
                     <button type="button" data-metric="efi" aria-pressed="false">Eficiência</button>
                   </div>
+                  <button type="button" class="pd-tgl on" id="pd-heat-paradas-tg" aria-pressed="true"><span class="pd-tgl-ico" aria-hidden="true"></span>Paradas</button>
                 </div>
               </div>
               <div class="pd-legend">
@@ -1001,6 +1033,8 @@
                 <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#22c55e"></span>≥90%</div>
                 <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#2a1f3d;border:1px solid #c79bff;"></span>apontou, sem desemp.</div>
                 <div class="pd-legend-item"><span class="pd-legend-swatch" style="background:#0d3438;border:1px solid #5eead4;"></span>status registrado</div>
+                <div class="pd-legend-item pd-leg-par"><span class="pd-legend-swatch pd-sw-par"></span>parada informada no apontamento</div>
+                <div class="pd-legend-item pd-leg-par"><span class="pd-legend-swatch pd-sw-par pd-sw-par-sem"></span>parada sem motivo</div>
                 <div class="pd-legend-item pd-hli-x"><span class="pd-legend-swatch" style="background:#161b26"></span>dom</div>
                 <div class="pd-legend-item pd-hli-x"><span class="pd-legend-swatch" style="background:repeating-linear-gradient(135deg,#121822 0 3px,#0d1118 3px 6px);border:1px solid #2c3442;"></span>fora da frota</div>
               </div>
@@ -1069,6 +1103,39 @@
                 <div class="pd-blist" id="pd-paradas-top"></div>
               </section>
             </div>
+            <div class="pd-aviso pd-aviso-warn" id="pd-apar-aviso" data-sub="apontparadas" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>Pra ver as paradas informadas no apontamento, publique a nova versão do Code.gs (Implantar → Gerenciar implantações → lápis → Nova versão → Implantar). O App da Web que está no ar ainda não manda a resposta de "Houve alguma parada de máquina?".</div></div>
+            <div class="pd-kgrid pd-kgrid-5" id="pd-kpis-apar" data-sub="apontparadas"></div>
+            <details class="pd-dica" id="pd-apar-dica" data-sub="apontparadas"><summary><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>Como esta página conta</summary><div class="pd-dica-txt">Cada apontamento do formulário responde "Houve alguma parada de máquina?". "Não Houve Parada de máquina" conta como sem parada; "Sim - motivo" e o que o operador escreveu em "Outro" contam como parada com motivo; "Sim" sozinho é parada sem motivo; em branco, não respondeu. O que foi escrito à mão é agrupado por palavra-chave, pelo primeiro motivo citado (janta e café viram Pausa, "início 9:30" vira Horário, "regulagem" vira Regulagem...) — o texto original aparece na lista. O desempenho comparado é a média dos apontamentos. Usa o período e os filtros do topo. Turno inteiro sem apontamento fica em Paradas registradas.</div></details>
+            <div class="pd-grid12" id="pd-apar-grid" data-sub="apontparadas">
+              <section class="pd-card pd-sp6">
+                <div class="pd-shead">
+                  <div>
+                    <div class="pd-stitle"><span class="pd-sbar"></span><span class="pd-stag">MOTIVOS</span><span>Por que parou</span></div>
+                    <div class="pd-ssub">Apontamentos com parada e o desempenho médio deles · clique pra filtrar a lista</div>
+                  </div>
+                </div>
+                <div class="pd-blist" id="pd-apar-motivos"></div>
+              </section>
+              <section class="pd-card pd-sp6">
+                <div class="pd-shead">
+                  <div>
+                    <div class="pd-stitle"><span class="pd-sbar"></span><span class="pd-stag">MÁQUINAS</span><span>Quem mais parou</span></div>
+                    <div class="pd-ssub">Apontamentos com parada ÷ apontamentos da máquina · clique pra filtrar a lista</div>
+                  </div>
+                </div>
+                <div class="pd-blist" id="pd-apar-maquinas"></div>
+              </section>
+            </div>
+            <section class="pd-card" id="pd-apar-card" data-sub="apontparadas">
+              <div class="pd-shead">
+                <div>
+                  <div class="pd-stitle"><span class="pd-sbar"></span><span class="pd-stag">LISTA</span><span>Apontamentos com parada</span></div>
+                  <div class="pd-ssub" id="pd-apar-sub">—</div>
+                </div>
+                <button type="button" class="pd-fchip" id="pd-apar-chip" hidden></button>
+              </div>
+              <div class="pd-scrollbox"><table class="pd-table" id="pd-apar-table"></table></div>
+            </section>
           <div class="pd-card" data-sub="ferramentas">
             <div class="pd-card-title" style="margin-bottom:2px;">Ferramentas — percentil de injetadas</div>
             <div class="pd-page-sub" id="pd-maq-ferramentas-sub" style="margin-bottom:10px;">—</div>
@@ -1527,7 +1594,7 @@ function firstDayOfMonthDoy(doy){
 }
 var DEFAULT_START_DOY = 0;
 
-var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, metaEfic:70, activeView:'geral', activeSub:'painel', activeSubs:{}, chartMetric:'des', heatMetric:'des', sortKey:'desemp', sortDir:'asc', refugoView:'tudo', limpezaView:'ferramenta', limpezaDrill:null, custoOperadorSalario:2500, custoOperadorFator:1.5, custoOperadorDiasUteis:21, minDesemp:0, maxDesemp:120, turnoFilter:[], operadorFilter:[], maquinaFilter:[], ferramentaFilter:[], chartRange:'all', selectedMachine:null, turnosSortKey:null, turnosSortDir:'asc', showHelpText:true,
+var STATE = { startDoy:0, endDoy:0, metaDesemp:80, metaRefugo:2, metaEfic:70, activeView:'geral', activeSub:'painel', activeSubs:{}, chartMetric:'des', heatMetric:'des', heatParadas:true, sortKey:'desemp', sortDir:'asc', refugoView:'tudo', limpezaView:'ferramenta', limpezaDrill:null, custoOperadorSalario:2500, custoOperadorFator:1.5, custoOperadorDiasUteis:21, minDesemp:0, maxDesemp:120, turnoFilter:[], operadorFilter:[], maquinaFilter:[], ferramentaFilter:[], chartRange:'all', selectedMachine:null, turnosSortKey:null, turnosSortDir:'asc', showHelpText:true,
   turnoRanges:[ {name:'Comercial', start:'07:30', end:'17:28'}, {name:'Manhã', start:'06:15', end:'12:30'}, {name:'Tarde', start:'12:20', end:'21:15'}, {name:'Noite', start:'21:00', end:'06:30'} ] };
 function turnoCategory(raw){
   if(raw==='Dia') return 'Dia';
@@ -1556,6 +1623,80 @@ function bucketsNoFiltro(){
   return b.length ? b : ['D','N'];
 }
 function nTurnosEfi(){ return bucketsNoFiltro().length; }
+
+// ---------------------------------------------------------------------------------------------------
+// PARADA INFORMADA NO APONTAMENTO: o campo 15 de cada linha é a resposta de "Houve Alguma parada de Maquina?"
+// do formulário (Code.gs a partir de 03/11/2026). As opções do formulário são "Não Houve Parada de máquina" e
+// "Sim - <motivo>"; no "Outro" o operador escreve o que quiser (janta, regulagem, "início 9:30"...). Linha sem o
+// campo 15 = Code.gs antigo (o dashboard avisa que falta publicar a nova versão).
+// ---------------------------------------------------------------------------------------------------
+function normTxt(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
+var PARADA_OPCOES = [ // texto depois de "Sim - " -> nome do grupo (as opções do formulário)
+  ['troca de ferramenta','Troca de ferramenta'], ['ajuste de setup','Ajuste de setup'], ['problema na peca','Problema na peça'],
+  ['manutencao','Manutenção'], ['problema de maquina','Problema de máquina'], ['falta de acertos metalicos','Falta de acertos metálicos'],
+  ['falta de operador','Falta de operador'], ['falta de materia prima','Falta de matéria-prima'], ['falta de energia','Falta de energia'],
+  ['falta de carcaca','Falta de carcaça']
+];
+var GRUPO_PAUSA = 'Pausa (refeição, ginástica, reunião)';
+var GRUPO_HORARIO = 'Horário (início tarde, meio período)';
+var PARADA_ESCRITO = [ // o que o operador escreveu à mão -> grupo. Vale o motivo citado PRIMEIRO no texto (empate: ordem da lista).
+  [/^inici|^comec|^ate\b|^das \d|^as \d|\bmeio periodo\b|\bsabado\b/, GRUPO_HORARIO],
+  [/\b(janta|jantar|cafe|almoco|refeicao|lanche|ginastica|reuniao|intervalo|dds|treinamento|palestra|jogo do brasil)\b/, GRUPO_PAUSA],
+  [/regula|ajuste de parametro|parametro/, 'Regulagem'],
+  [/li[mn]p/, 'Limpeza (bico, molde, ferramenta)'],
+  [/falta (de )?(borracha|material|materia|silicone)|pegar materia|puxar borracha|buscar (borracha|material)|sem (borracha|material|materia)/, 'Falta de matéria-prima'],
+  [/carcaca/, 'Falta de carcaça'],
+  [/troca (de |a )?(molde|ferramenta)/, 'Troca de ferramenta'],
+  [/troca (de )?(maquina|operador)|mudanca de maquina|outra (injetora|maquina)/, 'Troca de máquina / operador'],
+  [/setup/, 'Ajuste de setup'],
+  [/manu[nt]|troca de bico|retifica/, 'Manutenção'],
+  [/energia/, 'Falta de energia'],
+  [/aquec|temperatura|\bfria\b|\bfrio\b/, 'Aquecimento / temperatura'],
+  [/va[sz]a|nao liga|quebr|sensor|destacador|resistencia|reiniciar|problema (na|de|no) maquina/, 'Problema de máquina'],
+  [/borracha/, 'Problema na borracha'],
+  [/(problema|poblema) na peca|peca (ruim|saindo)/, 'Problema na peça'],
+  [/\b\d{1,2} ?[:h.] ?\d{2}\b|\b\d{1,2} ?horas\b/, GRUPO_HORARIO]
+];
+var _paradaMemo = {};
+/** {tipo:'nao'|'motivo'|'semmotivo'|'vazio', grupo, texto} -- texto = a resposta como o operador mandou. */
+function classificarParada(raw){
+  var key = raw===null || raw===undefined ? '' : String(raw);
+  if(Object.prototype.hasOwnProperty.call(_paradaMemo, key)) return _paradaMemo[key];
+  var t = normTxt(key), res;
+  var grupoDe = function(x){
+    for(var i=0;i<PARADA_OPCOES.length;i++){ if(x.indexOf(PARADA_OPCOES[i][0])===0) return PARADA_OPCOES[i][1]; }
+    var melhor = null, pos = Infinity;
+    for(var j=0;j<PARADA_ESCRITO.length;j++){ var mm = PARADA_ESCRITO[j][0].exec(x); if(mm && mm.index < pos){ pos = mm.index; melhor = PARADA_ESCRITO[j][1]; } }
+    return melhor || 'Outro (escrito)';
+  };
+  if(!t) res = {tipo:'vazio'};
+  else if(/^(n|nao|nao houve( parada( de maquina)?)?|nao teve( parada)?|sem parada|nenhuma( parada)?)\.?$/.test(t)) res = {tipo:'nao'};
+  else {
+    var m = t.match(/^sim\b[\s\-–:,.]*(.*)$/);
+    if(m && !m[1].trim()) res = {tipo:'semmotivo', grupo:'Sim, sem motivo', texto:key.trim()};
+    else res = {tipo:'motivo', grupo:grupoDe(m ? m[1].trim() : t), texto:key.trim()};
+  }
+  _paradaMemo[key] = res;
+  return res;
+}
+function paradaDe(r){ return r.length > 15 ? classificarParada(r[15]) : {tipo:'semdado'}; }
+function ehParada(p){ return p.tipo==='motivo' || p.tipo==='semmotivo'; }
+/** O App da Web manda a resposta de parada? (Code.gs de 03/11 em diante.) */
+function temDadoParada(){ return ROWS.length > 0 && ROWS.some(function(r){ return r.length > 15; }); }
+/** Contagem das respostas num conjunto de apontamentos. */
+function contarParadas(rows){
+  var c = {total:rows.length, com:0, motivo:0, sem:0, vazio:0, nao:0};
+  rows.forEach(function(r){ var p = paradaDe(r); if(p.tipo==='nao') c.nao++; else if(p.tipo==='motivo'){ c.com++; c.motivo++; } else if(p.tipo==='semmotivo'){ c.com++; c.sem++; } else c.vazio++; });
+  return c;
+}
+/** Marca do mapa de calor pra um quadradinho (lista de apontamentos dele). */
+function marcaParada(list){
+  if(!STATE.heatParadas || !list.length) return {cls:'', tip:''};
+  var textos = [], sem = false;
+  list.forEach(function(r){ var p = paradaDe(r); if(p.tipo==='motivo'){ if(textos.indexOf(p.texto)===-1) textos.push(p.texto); } else if(p.tipo==='semmotivo') sem = true; });
+  if(!textos.length && !sem) return {cls:'', tip:''};
+  return {cls:' pd-par'+(sem?' pd-par-sem':''), tip:'Parada informada no apontamento: '+textos.join('; ')+(sem ? (textos.length?'; ':'')+'"Sim", sem motivo' : '')};
+}
 /** "× 2 turnos" / "× 1 turno (só o diurno, pelo filtro)" -- pros textos que explicam a conta. */
 function txtTurnosEfi(){ var b = bucketsNoFiltro(); return b.length===2 ? '2 turnos' : '1 turno — só o '+(b[0]==='D' ? 'diurno' : 'noturno')+', pelo filtro de turno'; }
 function isValidDesemp(r){ return r[3]!==null; }
@@ -1975,8 +2116,18 @@ function openDayDetailModal(day, machineFilter, ignoreGlobalFilters, presetBucke
       var pct = m.vol/totalVol*100;
       return '<div class="pd-mini-row"><span class="name">'+m.name+' <span style="color:var(--text-faint)">('+m.count+')</span></span><span class="val" style="color:var(--red)">'+fmtPct(pct,0)+'</span></div>';
     }).join('') : '<div class="pd-empty" style="padding:10px 0;">Sem refugo com motivo nesse recorte.</div>';
+    var parHtml = '';
+    if(temDadoParada()){
+      var cp = contarParadas(rows), porTxt = {};
+      rows.forEach(function(r){ var pa = paradaDe(r); if(ehParada(pa)){ var k = pa.tipo==='semmotivo' ? 'Sim (sem motivo)' : pa.texto; porTxt[k] = (porTxt[k]||0)+1; } });
+      var itens = Object.keys(porTxt).sort(function(a, b){ return porTxt[b]-porTxt[a]; });
+      parHtml = '<div class="pd-modal-section-title" style="margin-top:14px;">Parada informada no turno</div>'+
+        (itens.length ? itens.map(function(k){ return '<div class="pd-mini-row"><span class="name'+(k==='Sim (sem motivo)'?' pd-txt-bad':'')+'">'+escStatusHtml(k)+'</span><span class="val" style="color:#fcd34d">'+porTxt[k]+'x</span></div>'; }).join('')
+          : '<div class="pd-empty" style="padding:10px 0;">'+(cp.nao ? 'Nenhuma: '+(cp.nao===rows.length ? 'todos' : cp.nao+' de '+rows.length)+' responderam "não houve parada".' : 'Ninguém respondeu a pergunta de parada.')+'</div>')+
+        (itens.length && cp.nao ? '<div class="pd-mini-row"><span class="name" style="color:var(--text-faint)">Não houve parada</span><span class="val" style="color:var(--text-faint)">'+cp.nao+'x</span></div>' : '');
+    }
     document.getElementById('pd-modal-motivos').innerHTML =
-      '<div class="pd-modal-section-title">Motivos de refugo neste recorte</div>' + motHtml;
+      '<div class="pd-modal-section-title">Motivos de refugo neste recorte</div>' + motHtml + parHtml;
 
     var tbodyHtml = rows.map(function(r){
       var clamped = wasClamped(r);
@@ -1987,11 +2138,14 @@ function openDayDetailModal(day, machineFilter, ignoreGlobalFilters, presetBucke
         '<td>'+(r[13]||'—')+'</td>'+
         '<td>'+(r[14]!==null&&r[14]!==undefined?fmtInt(r[14]):'—')+'</td>'+
         '<td>'+(r[3]!==null?fmtPct(r[3],0):'—')+(clamped?' 🔒':'')+'</td>'+
+        (function(){ var pa = paradaDe(r);
+          var txt = pa.tipo==='nao' ? 'Não' : (pa.tipo==='motivo' ? pa.texto : (pa.tipo==='semmotivo' ? 'Sim (sem motivo)' : '—'));
+          return '<td class="pd-detail-motivo'+(pa.tipo==='semmotivo'?' pd-txt-bad':'')+'" title="'+escAttr(txt)+'">'+escStatusHtml(txt)+'</td>'; })()+
         '<td>'+fmtInt(r[4]||0)+'</td><td>'+fmtInt(r[5]||0)+'</td>'+
         '<td>'+(r[7]!==null?fmtPct(r[7],1):'—')+'</td>'+
         '<td class="pd-detail-motivo" title="'+motivo.replace(/"/g,'&quot;')+'">'+motivo+'</td></tr>';
     }).join('');
-    document.getElementById('pd-detail-tbody').innerHTML = tbodyHtml || '<tr><td colspan="11" class="pd-empty">Nada com esse filtro.</td></tr>';
+    document.getElementById('pd-detail-tbody').innerHTML = tbodyHtml || '<tr><td colspan="12" class="pd-empty">Nada com esse filtro.</td></tr>';
   }
 
   function opt(value,label,selected){ return '<option value="'+value+'"'+(value===selected?' selected':'')+'>'+label+'</option>'; }
@@ -2025,7 +2179,7 @@ function openDayDetailModal(day, machineFilter, ignoreGlobalFilters, presetBucke
     '</div>'+
     '<div id="pd-modal-motivos" style="margin-bottom:16px;"></div>'+
     '<div class="pd-detail-table-wrap"><table class="pd-detail-table"><thead><tr>'+
-      '<th>Injetora</th><th>Turno</th><th>Operador</th><th>Ferramenta</th><th>Cavidades</th><th>Injetadas</th><th>Desemp.</th><th>Boas</th><th>Previstas</th><th>Refugo</th><th>Motivo do refugo</th>'+
+      '<th>Injetora</th><th>Turno</th><th>Operador</th><th>Ferramenta</th><th>Cavidades</th><th>Injetadas</th><th>Desemp.</th><th>Parada no turno</th><th>Boas</th><th>Previstas</th><th>Refugo</th><th>Motivo do refugo</th>'+
     '</tr></thead><tbody id="pd-detail-tbody"></tbody></table></div>';
 
   document.getElementById('pd-modal-overlay').classList.add('show');
@@ -2618,6 +2772,9 @@ function renderOverview(){
     rrowHtml('Frota que rodou (máquina × turno)', fmtPct(agg.ocupacao,1), '#06b6d4', '#67e8f9', '', agg.efiCells+' de '+agg.efiCap+' máquina × turno tiveram apontamento, nos dias fechados com produção')+
     rrowHtml('Peças previstas', fmtInt(agg.sumPrev), '#3b82f6')+
     rrowHtml('Dias com dados', agg.daysWithData+' de '+rangeDays, '#9aa39d')+
+    (temDadoParada() ? (function(){ var cp = contarParadas(agg.filtered);
+      return rrowHtml('Apontamentos com parada', cp.com+' de '+cp.total+' ('+fmtPct(cp.total?cp.com/cp.total*100:null,0)+')'+(cp.sem?' · '+cp.sem+' sem motivo':''), '#fbbf24', '#fcd34d', '',
+        'Resposta de "Houve alguma parada de máquina?" no formulário — detalhes em Máquinas › Paradas no apontamento'); })() : '')+
     rrowHtml('Turnos sem apontamento', vazios.total+' · '+vazios.comMotivo+' c/ motivo', '#5eead4', null, 'only-mobile-row');
   var linkResumo = document.getElementById('pd-summary-link');
   if(linkResumo) linkResumo.style.display = mobile ? '' : 'none';
@@ -2676,6 +2833,13 @@ function renderOverviewCharts(){
 function renderHeatmap(agg){
   var mobile = isMobile();
   var efiMode = STATE.heatMetric==='efi';
+  var temPar = temDadoParada(), parOn = temPar && STATE.heatParadas;
+  var tgPar = document.getElementById('pd-heat-paradas-tg');
+  tgPar.disabled = !temPar; tgPar.classList.toggle('on', parOn); tgPar.setAttribute('aria-pressed', parOn ? 'true' : 'false');
+  tgPar.title = temPar ? (parOn ? 'Esconder' : 'Mostrar')+' a marca de parada informada no apontamento (canto da célula)'
+                       : 'Publique a nova versão do Code.gs pra ver as paradas informadas no apontamento';
+  document.querySelectorAll('#geral-tab-heatmap .pd-leg-par').forEach(function(el){ el.hidden = !parOn; });
+  var marca = function(list){ return parOn ? marcaParada(list) : {cls:'', tip:''}; };
   document.querySelectorAll('#pd-heat-metric-seg button[data-metric]').forEach(function(b){ var on=b.dataset.metric===STATE.heatMetric; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on?'true':'false'); });
   document.getElementById('pd-heat-title').textContent = efiMode ? 'Mapa de calor — eficiência por máquina e dia' : 'Mapa de calor — desempenho por máquina e turno';
   document.getElementById('pd-heat-tag').textContent = mobile ? 'ÚLTIMOS 7 DIAS' : 'PERÍODO';
@@ -2757,9 +2921,11 @@ function renderHeatmap(agg){
           var tip = nbE===2
             ? q+': ('+(vD!==null?fmtPct(vD,0):'0 (sem apontamento)')+' + '+(vN!==null?fmtPct(vN,0):'0 (sem apontamento)')+') ÷ 2 = '+fmtPct(e,0)+(isPartialDay(d)?' — dia em andamento, a noite ainda não aconteceu':'')
             : q+': '+fmtPct(e,0)+' — '+txtTurnosEfi();
-          tbody += '<td class="pd-heat-cell" colspan="2"'+base+' style="'+border+'background:'+ce.bg+';color:'+ce.text+';" title="'+escAttr(tip)+'">'+semPct(Math.round(e)+'%')+'</td>';
+          var mkE = marca(g.D.concat(g.N));
+          tbody += '<td class="pd-heat-cell'+mkE.cls+'" colspan="2"'+base+' style="'+border+'background:'+ce.bg+';color:'+ce.text+';" title="'+escAttr(tip+(mkE.tip?' · '+mkE.tip:''))+'">'+semPct(Math.round(e)+'%')+'</td>';
         } else if(g.D.length || g.N.length){
-          tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp" colspan="2"'+base+' style="'+border+'" title="'+escAttr(q+': apontou, mas sem desempenho válido (confira peças previstas). Clique pra ver.')+'">!</td>';
+          var mkE2 = marca(g.D.concat(g.N));
+          tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp'+mkE2.cls+'" colspan="2"'+base+' style="'+border+'" title="'+escAttr(q+': apontou, mas sem desempenho válido (confira peças previstas). Clique pra ver.'+(mkE2.tip?' · '+mkE2.tip:''))+'">!</td>';
         } else {
           var sD = statusFor(d, m, 'D'), sN = statusFor(d, m, 'N'), st = sD || sN;
           var bk = sD ? 'D' : (sN ? 'N' : 'D');
@@ -2774,13 +2940,14 @@ function renderHeatmap(agg){
       [['D', vD, g.D], ['N', vN, g.N]].forEach(function(t){
         var b = t[0], v = t[1], list = t[2];
         var bb = base+' data-bucket="'+b+'"';
+        var mk = marca(list);
         if(v!==null){
           var c = heatColor(v);
-          tbody += '<td class="pd-heat-cell"'+bb+' style="'+border+'background:'+c.bg+';color:'+c.text+';">'+semPct(Math.round(v)+'%')+'</td>';
+          tbody += '<td class="pd-heat-cell'+mk.cls+'"'+bb+' style="'+border+'background:'+c.bg+';color:'+c.text+';"'+(mk.tip?' title="'+escAttr(mk.tip)+'"':'')+'>'+semPct(Math.round(v)+'%')+'</td>';
         } else if(list.length){
           // Tem apontamento nesse turno, mas nenhum com desempenho válido (ex.: previstas = 0) -- diferente de
           // "não rodou". Não conta como parada.
-          tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp"'+bb+' style="'+border+'" title="'+list.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.">!</td>';
+          tbody += '<td class="pd-heat-cell empty pd-heat-nodesemp'+mk.cls+'"'+bb+' style="'+border+'" title="'+escAttr(list.length+' apontamento(s) nesse turno, mas sem desempenho válido pra calcular -- confira peças previstas. Clique pra ver.'+(mk.tip?' · '+mk.tip:''))+'">!</td>';
         } else {
           var st2 = statusFor(d, m, b);
           if(st2){
@@ -3115,6 +3282,93 @@ function renderParadas(){
   document.getElementById('pd-paradas-top').innerHTML = top.length ? top.map(function(t){
     return '<div class="pd-brow"><div><div class="pd-bn">INJ '+t.m+'</div></div><div class="pd-btrack"><div class="pd-bfill" style="width:'+(t.v/max*100).toFixed(1)+'%;background:#fbbf24;"></div></div><div class="pd-bval">'+t.v+' turno'+(t.v>1?'s':'')+'</div></div>';
   }).join('') : '<div class="pd-empty">Nenhum turno parado com motivo no período.</div>';
+}
+
+/** Máquinas › Paradas no apontamento: o que os operadores responderam em "Houve alguma parada de máquina?". */
+var APAR = { grupo:null, maq:null };
+var APAR_MAX_LINHAS = 1000;
+function renderParadasApont(){
+  var tem = temDadoParada();
+  document.getElementById('pd-apar-aviso').hidden = tem;
+  ['pd-kpis-apar','pd-apar-dica','pd-apar-grid','pd-apar-card'].forEach(function(id){ document.getElementById(id).hidden = !tem; });
+  if(!tem){ document.getElementById('pd-kpis-apar').innerHTML = ''; return; }
+  var agg = computeAgg(STATE.startDoy, STATE.endDoy);
+  var rows = agg.filtered;
+  var c = contarParadas(rows);
+  var desCom = {s:0, n:0}, desSem = {s:0, n:0}, porGrupo = {}, porMaq = {}, lista = [];
+  rows.forEach(function(r){
+    var p = paradaDe(r), m = r[1];
+    var d = (r[3]!==null && r[3]!==undefined) ? clampDesemp(r[3]) : null;
+    if(!porMaq[m]) porMaq[m] = {n:0, par:0, grupos:{}};
+    porMaq[m].n++;
+    if(p.tipo==='nao'){ if(d!==null){ desSem.s+=d; desSem.n++; } return; }
+    if(!ehParada(p)) return;
+    if(d!==null){ desCom.s+=d; desCom.n++; }
+    var g = p.grupo;
+    if(!porGrupo[g]) porGrupo[g] = {n:0, s:0, nd:0};
+    porGrupo[g].n++; if(d!==null){ porGrupo[g].s+=d; porGrupo[g].nd++; }
+    porMaq[m].par++; porMaq[m].grupos[g] = (porMaq[m].grupos[g]||0)+1;
+    lista.push({r:r, p:p});
+  });
+  var mCom = desCom.n ? desCom.s/desCom.n : null, mSem = desSem.n ? desSem.s/desSem.n : null;
+  var pct = function(a, b){ return b ? a/b*100 : null; };
+  document.getElementById('pd-kpis-apar').innerHTML = [
+    kpiCardHtml({tag:'div', id:'com', label:'Apontamentos com parada', valor:fmtInt(c.com), unidade:'de '+fmtInt(c.total), value:c.com, cor:'#fbbf24',
+      sub:fmtPct(pct(c.com, c.total),0)+' dos apontamentos do período'}),
+    kpiCardHtml({tag:'div', id:'motivo', label:'Com motivo', valor:fmtInt(c.motivo), value:c.motivo, cor:'#22c55e', sub:fmtPct(pct(c.motivo, c.com),0)+' das paradas'}),
+    kpiCardHtml({tag:'div', id:'sem', label:'Sem motivo', valor:fmtInt(c.sem), value:c.sem, cor:'#ef4444', corVal:c.sem ? '#f87171' : null, sub:'responderam só "Sim"'}),
+    kpiCardHtml({tag:'div', id:'vazio', label:'Não responderam', valor:fmtInt(c.vazio), value:c.vazio, cor:'#9aa39d', sub:'pergunta em branco'}),
+    kpiCardHtml({tag:'div', id:'des', label:'Desempenho quando parou', valor:fmtDec(mCom,1), unidade:'%', value:mCom, cor:'#a78bfa',
+      corVal: mCom===null ? null : statusColor(mCom, STATE.metaDesemp, false), sub:'sem parada: '+fmtPct(mSem,1)+' · média dos apontamentos'})
+  ].join('');
+
+  // ranking dos motivos
+  var grupos = Object.keys(porGrupo).map(function(g){ return {g:g, n:porGrupo[g].n, des:porGrupo[g].nd ? porGrupo[g].s/porGrupo[g].nd : null}; })
+    .sort(function(a, b){ return b.n-a.n || a.g.localeCompare(b.g); });
+  var maxG = grupos.length ? grupos[0].n : 1;
+  var corG = function(g){ return g==='Sim, sem motivo' ? '#ef4444' : (g===GRUPO_PAUSA || g===GRUPO_HORARIO ? '#9aa39d' : '#fbbf24'); };
+  document.getElementById('pd-apar-motivos').innerHTML = grupos.length ? grupos.map(function(x){
+    return '<div class="pd-brow pd-brow-click'+(APAR.grupo===x.g?' pd-sel':'')+'" data-grupo="'+escAttr(x.g)+'" role="button" tabindex="0" aria-pressed="'+(APAR.grupo===x.g?'true':'false')+'">'+
+      '<div><div class="pd-bn">'+escStatusHtml(x.g)+'</div><div class="pd-bs">desempenho médio '+fmtPct(x.des,0)+'</div></div>'+
+      '<div class="pd-btrack"><div class="pd-bfill" style="width:'+(x.n/maxG*100).toFixed(1)+'%;background:'+corG(x.g)+';"></div></div>'+
+      '<div class="pd-bval">'+fmtInt(x.n)+' · '+fmtPct(pct(x.n, c.com),0)+'</div></div>';
+  }).join('') : '<div class="pd-empty">Nenhuma parada informada no período.</div>';
+
+  // máquinas que mais pararam
+  var maqs = Object.keys(porMaq).map(Number).filter(function(m){ return porMaq[m].par>0; }).map(function(m){
+    var gs = porMaq[m].grupos, top = Object.keys(gs).sort(function(a, b){ return gs[b]-gs[a] || a.localeCompare(b); })[0];
+    return {m:m, par:porMaq[m].par, n:porMaq[m].n, top:top, topN:gs[top]};
+  }).sort(function(a, b){ return b.par-a.par || (b.par/b.n)-(a.par/a.n) || a.m-b.m; }).slice(0, 12);
+  var maxM = maqs.length ? maqs[0].par : 1;
+  document.getElementById('pd-apar-maquinas').innerHTML = maqs.length ? maqs.map(function(x){
+    return '<div class="pd-brow pd-brow-click'+(APAR.maq===x.m?' pd-sel':'')+'" data-m="'+x.m+'" role="button" tabindex="0" aria-pressed="'+(APAR.maq===x.m?'true':'false')+'">'+
+      '<div><div class="pd-bn">INJ '+x.m+'</div><div class="pd-bs">mais comum: '+escStatusHtml(x.top)+' ('+x.topN+')</div></div>'+
+      '<div class="pd-btrack"><div class="pd-bfill" style="width:'+(x.par/maxM*100).toFixed(1)+'%;background:#fbbf24;"></div></div>'+
+      '<div class="pd-bval">'+x.par+' de '+x.n+' ('+fmtPct(pct(x.par, x.n),0)+')</div></div>';
+  }).join('') : '<div class="pd-empty">Nenhuma parada informada no período.</div>';
+
+  // lista (mais recente primeiro), com o recorte do motivo/máquina clicado
+  var filtrada = lista.filter(function(x){ return (!APAR.grupo || x.p.grupo===APAR.grupo) && (APAR.maq===null || x.r[1]===APAR.maq); })
+    .sort(function(a, b){ return b.r[0]-a.r[0] || a.r[1]-b.r[1] || (turnoBucket(a.r) < turnoBucket(b.r) ? -1 : 1); });
+  var mostrar = filtrada.slice(0, APAR_MAX_LINHAS);
+  var chip = document.getElementById('pd-apar-chip');
+  var recorte = [APAR.grupo, APAR.maq!==null ? 'INJ '+APAR.maq : null].filter(Boolean);
+  chip.hidden = !recorte.length;
+  chip.innerHTML = recorte.length ? 'Só '+escStatusHtml(recorte.join(' · '))+' <span aria-hidden="true">✕</span>' : '';
+  chip.setAttribute('aria-label', recorte.length ? 'Tirar o filtro: '+recorte.join(' · ') : '');
+  document.getElementById('pd-apar-sub').textContent = fmtInt(filtrada.length)+' apontamento(s) com parada de '+doyToStr(STATE.startDoy)+' a '+doyToStr(STATE.endDoy)+
+    ' · mais recente primeiro'+(filtrada.length>APAR_MAX_LINHAS ? ' · mostrando os '+fmtInt(APAR_MAX_LINHAS)+' mais recentes' : '')+' · clique numa linha pra abrir o turno';
+  var body = mostrar.map(function(x){
+    var r = x.r, b = turnoBucket(r);
+    return '<tr class="pd-row-click" data-d="'+r[0]+'" data-m="'+r[1]+'" data-b="'+b+'" title="Abrir os apontamentos deste turno">'+
+      '<td>'+doyToStr(r[0])+'</td><td style="font-family:var(--font-ui);font-weight:700;">INJ '+r[1]+'</td><td style="font-family:var(--font-ui);">'+escStatusHtml(effectiveTurno(r))+'</td>'+
+      '<td style="font-family:var(--font-ui);">'+escStatusHtml(r[11]||'—')+'</td><td>'+escStatusHtml(r[12]||'—')+'</td>'+
+      '<td>'+(r[3]!==null && r[3]!==undefined ? fmtPct(clampDesemp(r[3]),0) : '—')+'</td>'+
+      '<td class="pd-par-resp'+(x.p.tipo==='semmotivo'?' pd-txt-bad':'')+'">'+escStatusHtml(x.p.tipo==='semmotivo' ? 'Sim (sem motivo)' : x.p.texto)+'</td>'+
+      '<td style="font-family:var(--font-ui);">'+escStatusHtml(x.p.grupo)+'</td></tr>';
+  }).join('');
+  document.getElementById('pd-apar-table').innerHTML = '<thead><tr><th>Data</th><th>Injetora</th><th>Turno</th><th>Operador</th><th>Ferramenta</th><th>Desemp.</th><th>Resposta do operador</th><th>Motivo (agrupado)</th></tr></thead>'+
+    '<tbody>'+(body || '<tr><td colspan="8" class="pd-empty">Nenhuma parada informada com esse recorte.</td></tr>')+'</tbody>';
 }
 
 /** Injetoras com apontamento na planilha que não estão na aba Maquinas, com volume de máquina de verdade
@@ -4249,6 +4503,7 @@ var NAV_META = {
   'limpeza:historico': {t:'Histórico detalhado', d:'Cada apontamento de limpeza, linha a linha.'},
   'maquinas:frota': {t:'Frota', d:'As injetoras da aba Maquinas, com desempenho, eficiência e refugo no período.'},
   'maquinas:paradas': {t:'Paradas registradas', d:'Tudo o que foi marcado nos quadradinhos "·" do mapa de calor: manutenção, parada não planejada, sem operador e outros motivos.'},
+  'maquinas:apontparadas': {t:'Paradas no apontamento', d:'O que o operador respondeu em "Houve alguma parada de máquina?" no formulário: quantos apontamentos tiveram parada, por quê e em quais máquinas.'},
   'maquinas:ferramentas': {t:'Ferramentas (percentil)', d:'Volume de injetadas de cada ferramenta, comparado com o das outras ferramentas do período.'},
   'maquinas:cadastro': {t:'Cadastro de máquinas', d:'A lista de injetoras vem da aba Maquinas da planilha, lida toda vez que o dashboard carrega.', semFiltros:true},
   'producao:resumo': {t:'Resumo', d:'Volume produzido no período, por material.'},
@@ -4264,7 +4519,7 @@ var NAV_META = {
 function renderAll(){
   var v = STATE.activeView, sub = STATE.activeSub;
   if(v==='geral'){ if(sub==='turnos') renderTurnos(); else if(sub==='comparativo') renderComparativo(); else renderOverview(); }
-  else if(v==='maquinas'){ if(sub==='paradas') renderParadas(); else if(sub==='cadastro') renderCadastro(); else renderMaquinas(); }
+  else if(v==='maquinas'){ if(sub==='paradas') renderParadas(); else if(sub==='apontparadas') renderParadasApont(); else if(sub==='cadastro') renderCadastro(); else renderMaquinas(); }
   else if(v==='producao') renderProducao();
   else if(v==='refugo') renderRefugo();
   else if(v==='limpeza') renderLimpeza();
@@ -4524,6 +4779,26 @@ document.getElementById('pd-kpis-painel').addEventListener('click', function(e){
 });
 ['pd-semapont-link','pd-summary-link'].forEach(function(id){
   document.getElementById(id).addEventListener('click', function(){ switchView('maquinas', 'paradas'); });
+});
+document.getElementById('pd-heat-paradas-tg').addEventListener('click', function(){
+  if(this.disabled) return;
+  STATE.heatParadas = !STATE.heatParadas;
+  renderHeatmap(computeAgg(STATE.startDoy, STATE.endDoy));
+});
+function aparClique(e){
+  var g = e.target.closest('[data-grupo]'), mm = e.target.closest('#pd-apar-maquinas [data-m]');
+  if(g){ APAR.grupo = APAR.grupo===g.dataset.grupo ? null : g.dataset.grupo; renderParadasApont(); return; }
+  if(mm){ var m = Number(mm.dataset.m); APAR.maq = APAR.maq===m ? null : m; renderParadasApont(); }
+}
+['pd-apar-motivos','pd-apar-maquinas'].forEach(function(id){
+  var el = document.getElementById(id);
+  el.addEventListener('click', aparClique);
+  el.addEventListener('keydown', function(e){ if(e.key==='Enter' || e.key===' '){ if(e.target.closest('[data-grupo], [data-m]')){ e.preventDefault(); aparClique(e); } } });
+});
+document.getElementById('pd-apar-chip').addEventListener('click', function(){ APAR.grupo = null; APAR.maq = null; renderParadasApont(); });
+document.getElementById('pd-apar-table').addEventListener('click', function(e){
+  var tr = e.target.closest('tr[data-d]'); if(!tr) return;
+  openDayDetailModal(Number(tr.dataset.d), Number(tr.dataset.m), false, tr.dataset.b);
 });
 document.getElementById('pd-paradas-table').addEventListener('click', function(e){
   var tr = e.target.closest('tr[data-m]'); if(!tr) return;
