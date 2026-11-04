@@ -239,6 +239,17 @@
   .pd-heatmap-table td.mname.pd-heat-summary.pd-heat-paradas:hover{background:#3a2a12;color:#ffbb66;}
   .pd-heat-cell.pd-heat-summary{height:34px;font-size:13.5px;font-weight:700;}
   .pd-heatmap-table td.mname.pd-heat-summary{font-size:12.5px;padding-right:14px;}
+  /* Período longo (04/11): a grade rola pro lado e a coluna das injetoras fica presa à esquerda (como congelar a
+     coluna na planilha). Fundo opaco + sombra de 3px cobrindo o espaço entre as células, senão as células que passam
+     por baixo aparecem nas frestas. As cores das células do mapa não mudam. */
+  .pd-heatmap-table{--pd-heat-fix:#0d1310;}
+  .pd-heatmap-table td.mname, .pd-heatmap-table th.pd-heat-corner{position:sticky;left:0;z-index:4;background-color:var(--pd-heat-fix);box-shadow:0 0 0 3px var(--pd-heat-fix);}
+  .pd-heatmap-table td.mname:hover{background:linear-gradient(rgba(77,171,247,.1),rgba(77,171,247,.1)) var(--pd-heat-fix);}
+  .pd-heatmap-table tr.pd-row-hover td.mname{background:linear-gradient(rgba(77,171,247,.12),rgba(77,171,247,.12)) var(--pd-heat-fix);}
+  .pd-heatmap-table tr.pd-row-selected td.mname{background:linear-gradient(rgba(77,171,247,.22),rgba(77,171,247,.22)) var(--pd-heat-fix);}
+  .pd-heatmap-table th.pd-heat-monthlabel{text-align:left;padding:2px 0 5px;font-size:11px;font-weight:800;color:var(--accent-text);letter-spacing:.4px;
+    border-left:1px solid var(--border-2);white-space:nowrap;}
+  .pd-heatmap-table .pd-heat-monthtxt{position:sticky;left:var(--pd-heat-namew,110px);display:inline-block;padding:0 6px;}
 
   .pd-filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
   .pd-filter-row select{background:var(--card-2);border:1px solid var(--border);color:var(--text);
@@ -811,7 +822,7 @@
         <button class="pd-avisos-btn" id="pd-avisos-btn" type="button" aria-expanded="false" aria-controls="pd-avisos-painel" aria-label="Avisos sobre a frota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 21.5 20h-19L12 3.5z"/><path d="M12 10v4.5M12 17.2h.01"/></svg><span class="pd-avisos-n" id="pd-avisos-n">0</span><span class="pd-avisos-lbl" id="pd-avisos-lbl">avisos</span></button>
         <div class="pd-avisos-painel" id="pd-avisos-painel" role="region" aria-label="Avisos" hidden></div>
       </div>
-      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-11-04.1</span></div>
+      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-11-04.2</span></div>
       <div class="pd-chip"><span class="pd-chip-k">Dados extraídos em</span><span class="pd-chip-v" id="pd-updated-value">—</span></div>
       <button class="pd-ibtn" id="pd-refresh-btn" type="button" title="Buscar dados novos da planilha" aria-label="Atualizar dados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg></button>
       <button class="pd-tmob" id="pd-mob-menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
@@ -2843,10 +2854,20 @@ function renderHeatmap(agg){
   document.querySelectorAll('#pd-heat-metric-seg button[data-metric]').forEach(function(b){ var on=b.dataset.metric===STATE.heatMetric; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on?'true':'false'); });
   document.getElementById('pd-heat-title').textContent = efiMode ? 'Mapa de calor — eficiência por máquina e dia' : 'Mapa de calor — desempenho por máquina e turno';
   document.getElementById('pd-heat-tag').textContent = mobile ? 'ÚLTIMOS 7 DIAS' : 'PERÍODO';
-  var hs = mobile ? Math.max(STATE.startDoy, STATE.endDoy-6) : STATE.startDoy, he = STATE.endDoy;
+  // A grade vai, no máximo, do 1º apontamento até hoje: fora disso não tem nada pra mostrar, e uma data digitada errada
+  // (ano 2002, ou o ano no meio da digitação) montaria milhares de dias vazios e travaria a página.
+  var primeiroDoy = ROWS.reduce(function(m,r){ return r[0]<m ? r[0] : m; }, Infinity);
+  var ps = Math.max(STATE.startDoy, primeiroDoy), pe = Math.min(STATE.endDoy, Math.max(LATEST_DOY, hojeDoyLocal()));
+  var hs = mobile ? Math.max(ps, pe-6) : ps, he = pe;
   var rangeDays = he-hs+1;
   var hc = document.getElementById('pd-heatmap-caption');
   var tableEl = document.getElementById('pd-heatmap-table');
+  if(he<hs){
+    hc.textContent = 'Nenhum apontamento nesse período.';
+    tableEl.innerHTML = '';
+    document.getElementById('pd-heatmap-scroll-top-inner').style.width = '0px';
+    return;
+  }
   var ranPeriod = {}; agg.filtered.forEach(function(r){ if(r[0]>=hs && r[0]<=he) ranPeriod[r[1]] = true; });
   var machines = fleetInPeriod(hs, he, ranPeriod);
   var semPct = function(t){ return mobile ? String(t).replace('%','') : t; };
@@ -2856,12 +2877,6 @@ function renderHeatmap(agg){
     '"Média de desempenho" = média SÓ das máquinas que rodaram · "Refugo" = refugos ÷ (refugos + boas), ponderado por peças · '+
     '"Máquinas paradas" = máquinas da frota sem NENHUM apontamento naquele turno. Uma célula roxa com "!" teve apontamento, só que sem desempenho válido (normalmente peças previstas = 0) — não conta como parada. '+
     'Passe o mouse em qualquer número do rodapé pra ver a conta; clique pra abrir os apontamentos. Clique no nome da injetora pra abrir o histórico completo.';
-  if(rangeDays>36){
-    hc.textContent = 'Período com '+rangeDays+' dias é grande demais pra grade diária legível — selecione até ~35 dias pra ver o mapa de calor. Os números acima já refletem o período inteiro.';
-    tableEl.innerHTML='';
-    document.getElementById('pd-heatmap-scroll-top-inner').style.width = '0px';
-    return;
-  }
   var parcialNote = (he===TODAY_DOY ? ' · '+doyToStr(TODAY_DOY)+' com borda tracejada (em andamento)' : '');
   hc.textContent = efiMode
     ? (nTurnosEfi()===1
@@ -2870,13 +2885,30 @@ function renderHeatmap(agg){
               : 'Eficiência de cada máquina no dia = (desempenho D + desempenho N) ÷ 2, e o turno sem apontamento conta 0. Ex.: rodou só de dia a 80% → 40%. Mesmas cores do desempenho · '+machines.length+' injetoras'+parcialNote))
     : (mobile ? 'Últimos 7 dias, valores em %. No computador aparece o período inteiro.'
               : machines.length+' injetoras da frota (aba Maquinas) · cada dia tem duas colunas, D (diurno) e N (noturno) · clique em qualquer célula pra abrir os apontamentos, já filtrados pro turno clicado'+parcialNote);
+  if(!mobile && rangeDays>14) hc.textContent += ' · '+rangeDays+' dias: arraste a grade pro lado ou use a barra de rolagem (a coluna das injetoras fica parada)';
 
   // Índice das linhas filtradas por dia+máquina+turno (uma passada só, em vez de filtrar ROWS por célula).
   var idx = {};
   agg.filtered.forEach(function(r){ if(r[0]<hs || r[0]>he) return; var k=r[0]+'_'+r[1]; if(!idx[k]) idx[k]={D:[],N:[]}; idx[k][turnoBucket(r)].push(r); });
   var isSun = function(d){ return new Date(DATE_BASE+d*86400000).getUTCDay()===0; };
 
-  var theadRow1 = '<tr><th rowspan="2" style="text-align:left;padding-left:4px;vertical-align:bottom;">Injetora</th>';
+  // Período com mais de um mês: uma linha a mais no cabeçalho com o nome de cada mês (o dia sozinho, "01", não diz de
+  // que mês é quando a grade rola por vários meses). Um mês só: cabeçalho igual a antes.
+  var mesDe = function(d){ var t = new Date(DATE_BASE+d*86400000); return t.getUTCFullYear()*12+t.getUTCMonth(); };
+  var multiMes = !mobile && mesDe(hs)!==mesDe(he);
+  var cantoTh = '<th rowspan="'+(multiMes?3:2)+'" class="pd-heat-corner" style="text-align:left;padding-left:4px;vertical-align:bottom;">Injetora</th>';
+  var theadRow0 = '';
+  if(multiMes){
+    theadRow0 = '<tr class="pd-heat-monthrow">'+cantoTh;
+    for(var di=hs, ini=hs; di<=he; di++){
+      if(di<he && mesDe(di+1)===mesDe(di)) continue;
+      var tm = new Date(DATE_BASE+di*86400000);
+      theadRow0 += '<th colspan="'+(2*(di-ini+1))+'" class="pd-heat-monthlabel"><span class="pd-heat-monthtxt">'+MONTH_NAMES_PT[tm.getUTCMonth()]+' '+tm.getUTCFullYear()+'</span></th>';
+      ini = di+1;
+    }
+    theadRow0 += '</tr>';
+  }
+  var theadRow1 = '<tr>'+(multiMes ? '' : cantoTh);
   var theadRow2 = '<tr>';
   for(var d=hs; d<=he; d++){
     if(isSun(d)){ theadRow1 += '<th colspan="2" rowspan="2" class="pd-heat-daylabel" data-day="'+d+'">dom</th>'; continue; }
@@ -3001,8 +3033,18 @@ function renderHeatmap(agg){
     });
   }
   var foot = rows.efi+'</tr>'+rows.med+'</tr>'+rows.ref+'</tr>'+rows.par+'</tr>';
-  tableEl.innerHTML = '<thead>'+theadRow1+theadRow2+'</thead><tbody>'+tbody+foot+'</tbody>';
+  tableEl.innerHTML = '<thead>'+theadRow0+theadRow1+theadRow2+'</thead><tbody>'+tbody+foot+'</tbody>';
   document.getElementById('pd-heatmap-scroll-top-inner').style.width = tableEl.scrollWidth + 'px';
+  // O nome do mês desliza junto com a rolagem, logo à direita da coluna das injetoras (que fica presa).
+  var cantoEl = tableEl.querySelector('th.pd-heat-corner');
+  if(cantoEl) tableEl.style.setProperty('--pd-heat-namew', (cantoEl.offsetWidth+8)+'px');
+  // Começo do período mudou: volta a rolagem pro início (senão abre num ponto qualquer do meio).
+  // Mesmo começo (ex.: salvou um status, chegou dado novo): fica onde a pessoa estava.
+  if(renderHeatmap._ini!==hs){
+    renderHeatmap._ini = hs;
+    document.getElementById('pd-heatmap-scroll').scrollLeft = 0;
+    document.getElementById('pd-heatmap-scroll-top').scrollLeft = 0;
+  }
   if(STATE.selectedMachine!=null){
     var selCell = tableEl.querySelector('td.mname[data-machine="'+STATE.selectedMachine+'"]');
     if(selCell) selCell.closest('tr').classList.add('pd-row-selected');
