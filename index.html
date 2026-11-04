@@ -809,9 +809,9 @@
     <div class="pd-tright">
       <div class="pd-avisos-wrap" id="pd-avisos-wrap" hidden>
         <button class="pd-avisos-btn" id="pd-avisos-btn" type="button" aria-expanded="false" aria-controls="pd-avisos-painel" aria-label="Avisos sobre a frota"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 21.5 20h-19L12 3.5z"/><path d="M12 10v4.5M12 17.2h.01"/></svg><span class="pd-avisos-n" id="pd-avisos-n">0</span><span class="pd-avisos-lbl" id="pd-avisos-lbl">avisos</span></button>
-        <div class="pd-avisos-painel" id="pd-avisos-painel" role="region" aria-label="Avisos da frota" hidden></div>
+        <div class="pd-avisos-painel" id="pd-avisos-painel" role="region" aria-label="Avisos" hidden></div>
       </div>
-      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-11-03.1</span></div>
+      <div class="pd-chip pd-chip-ver"><span class="pd-chip-k">Versão do script</span><span class="pd-chip-v">2026-11-04.1</span></div>
       <div class="pd-chip"><span class="pd-chip-k">Dados extraídos em</span><span class="pd-chip-v" id="pd-updated-value">—</span></div>
       <button class="pd-ibtn" id="pd-refresh-btn" type="button" title="Buscar dados novos da planilha" aria-label="Atualizar dados"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v6h-6"/></svg></button>
       <button class="pd-tmob" id="pd-mob-menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
@@ -843,7 +843,7 @@
         </div>
         <div class="pd-nsec" data-group="limpeza">
           <button class="pd-ngrp" type="button" data-group-toggle="limpeza" title="Limpeza de peça" aria-expanded="false">
-            <svg class="pd-nic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c-2.8 3.7-5.5 7.3-5.5 10.8a5.5 5.5 0 0 0 11 0c0-3.5-2.7-7.1-5.5-10.8z"/></svg>
+            <svg class="pd-nic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></svg>
             <span class="pd-nlbl">Limpeza de peça</span>
             <svg class="pd-nchev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
           </button>
@@ -1242,7 +1242,7 @@
           <div class="pd-view" id="view-limpeza">
           <div class="pd-lz-hero" data-sub="resumo">
             <div class="pd-lz-card" style="--lz-glow:rgba(0,131,62,.22);">
-              <div class="pd-lz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c-2.8 3.7-5.5 7.3-5.5 10.8a5.5 5.5 0 0 0 11 0c0-3.5-2.7-7.1-5.5-10.8z"/></svg></div>
+              <div class="pd-lz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88"/><path d="M14.47 14.48 20 20"/><path d="M8.12 8.12 12 12"/></svg></div>
               <div class="pd-lz-label">Total limpo</div>
               <div class="pd-lz-value" id="pd-limpeza-total-limpa">0</div>
               <div class="pd-lz-unit">peças, no período selecionado</div>
@@ -3386,9 +3386,21 @@ function hashTexto(t){ var h = 5381; t = String(t||''); for(var i=0;i<t.length;i
 
 /** Tudo o que merece atenção na frota, um item por assunto (cada um pode ser ignorado sozinho).
  * Devolve {ativos:[{chave, titulo, texto (HTML), acoes (HTML)}], ignorados:n}. */
+/** Dia de hoje no relógio de quem está olhando (mesma régua dos doy: dias desde 01/01/2026). */
+function hojeDoyLocal(){ var t = new Date(); return Math.round((Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()) - DATE_BASE)/86400000); }
+var ATRASO_MAX_DIAS = 3; // fim de semana + feriado não avisa
 function listarAvisos(){
   var info = FLEET_INFO, ativos = [], nIgn = 0;
   var add = function(a){ if(ignorado(a.chave)){ nIgn++; return; } ativos.push(a); };
+  // Dados parados: o último apontamento que chegou é velho. Em 04/11/2026 foi o cabeçalho "Data de Produção"
+  // apagado na planilha (o dashboard só mostrava agosto) -- esse aviso teria mostrado na hora.
+  var atraso = ROWS.length ? hojeDoyLocal() - LATEST_DOY : 0;
+  if(atraso > ATRASO_MAX_DIAS){
+    add({chave:'atraso:'+LATEST_DOY, titulo:'Último apontamento lido: '+doyToFull(LATEST_DOY)+' (faz '+atraso+' dias)', acoes:'',
+      texto:'Se a fábrica produziu depois disso, a leitura da planilha quebrou. O mais comum é alguém apagar ou renomear o cabeçalho '+
+        'de uma coluna na aba de apontamentos (linha 1: "Data de Produção", "Selecione o Numero da Injetora", "Total de peças Boas"...). '+
+        'Corrija na planilha e clique em atualizar no topo.'});
+  }
   if(info.fonte==='padrao'){
     add({chave:'fonte:padrao', titulo:'Aba Maquinas não encontrada', acoes:'',
       texto:'A planilha não tem a aba Maquinas (ou ela está sem nenhum ID válido): valem as '+FLEET.length+' injetoras fixas do código. O primeiro cadastro pelo + cria a aba.'});
@@ -3429,7 +3441,7 @@ function renderAvisos(){
   document.getElementById('pd-avisos-lbl').textContent = n===1 ? 'aviso' : 'avisos';
   btn.title = rot+' sobre a frota — clique pra ver';
   btn.setAttribute('aria-label', rot+' sobre a frota');
-  painel.innerHTML = '<div class="pd-avp-head"><span>Avisos da frota</span><button type="button" class="pd-modal-close" data-avisos-fechar="1" aria-label="Fechar avisos">✕</button></div>'+
+  painel.innerHTML = '<div class="pd-avp-head"><span>Avisos</span><button type="button" class="pd-modal-close" data-avisos-fechar="1" aria-label="Fechar avisos">✕</button></div>'+
     r.ativos.map(function(a){
       return '<div class="pd-avp-item" data-aviso="'+escAttr(a.chave)+'"><span class="pd-avp-dot" aria-hidden="true"></span><div class="pd-avp-body">'+
         '<div class="pd-avp-t">'+a.titulo+'</div><div class="pd-avp-d">'+a.texto+'</div>'+
